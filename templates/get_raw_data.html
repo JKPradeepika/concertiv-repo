@@ -1,0 +1,33 @@
+{% extends 'base.html'%}
+
+{% block content %}
+<div class="container-fluid text-center">
+  <br><br><br>
+  <h3>Altour - Air - Q1 2022</h3>
+  <form action="process-data" method="post">
+    {% csrf_token %}
+    <table class="table table-borderless text-center">
+      <tr>
+        <td>Customer Name: {{ form.customer_name }} </td>
+      </tr>
+      <tr>
+        <td>Travel Agency: {{ form.travel_agency }} </td>
+      </tr>
+      <tr>
+        <td> Year: {{ form.year }} </td>
+      </tr>
+      <tr>
+        <td> Quarter: {{ form.quarter }}</td> 
+      </tr>
+      <tr>
+        <td> Country: {{ form.country }}</td>
+      </tr>
+    </table>
+    <br> <br>
+    <p class="data"> {{ message }} {{ file }}</p>
+    <br>
+    <br>
+    <input type="submit"  class="btn-submit" value="Process Data">
+  </form>
+</div>
+{% endblock %}
