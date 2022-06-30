@@ -1,3 +1,4 @@
 requirements.txt
 .env
 /venv
+/CPR/air/__pycache__
