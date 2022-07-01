@@ -80,7 +80,6 @@ def get_prism_airline_info(file_path, csv_file_path, quarter, prism_airlies):
         sav = df.iloc[il]["Savings"]
         sav = sav.round(2)
         sav = sav.astype(str)
-        sav = "$" + sav
         prism_disc_lst.append(sav)
     return prism_disc_lst
        
@@ -697,21 +696,32 @@ def process_data(request):
         file_path = Path(os.path.join(new_file_path, prism_file_name))
         csv_file_path = Path(os.path.join(new_file_path, csv_prism_file_name))
         
+        prism_airlines_disc_list = []
         prism_airlines_disc = get_prism_airline_info(file_path, csv_file_path, quarter_year, prism_airlines)
         n = 4
         prism_airlines_disc_list = [prism_airlines_disc[i * n:(i+1)*n] for i in range((len(prism_airlines_disc) + n - 1) // n)]
         l1, l2, l3 = list(), list(), list()
+        total_prism_pre_discount, total_prism_actual_spend, total_prism_savings, total_prism_vol, total_prism_net  = 0.0, 0.0, 0.0, 0.0, 0.0
+        total_list = []
+        total_list.append("Total")
         for p in range(len(prism_airlines)):
             x = df.index[df["Savings Alliance Classification"] == prism_airlines[p]].tolist()
             vol = len(x)/len(df.index)
             vol = vol * 100
+            total_prism_vol = total_prism_vol + vol
             p_vol = str(round(vol, 2)) + "%"
             l1.append(p_vol)
-            prism_sum_savings = float(prism_airlines_disc_list[p][2])
             prism_sum_pre_discount = float(prism_airlines_disc_list[p][1])
-            net = (prism_sum_savings/prism_sum_pre_discount)*100
-            prism_airlines_disc_list[p][2] = "$" + str(prism_airlines_disc_list[p][2])
+            total_prism_pre_discount = total_prism_pre_discount + prism_sum_pre_discount
+            prism_sum_actual_spend = float(prism_airlines_disc_list[p][2])
+            total_prism_actual_spend = total_prism_actual_spend + prism_sum_actual_spend
+            prism_sum_savings = float(prism_airlines_disc_list[p][3])
+            total_prism_savings = total_prism_savings + prism_sum_savings
+            net = (prism_sum_actual_spend/prism_sum_pre_discount)*100
+            total_prism_net = total_prism_net + net
             prism_airlines_disc_list[p][1] = "$" + str(prism_airlines_disc_list[p][1])
+            prism_airlines_disc_list[p][2] = "$" + str(prism_airlines_disc_list[p][2])
+            prism_airlines_disc_list[p][3] = "$" + str(prism_airlines_disc_list[p][3])
             p_net = str(round(net, 2)) + "%"
             l2.append(p_net)
             l3.append(prism_airlines_disc_list[p][3])
@@ -731,65 +741,76 @@ def process_data(request):
         jet_blue_list, emi_list = [], []
         jet_blue_list.append("JetBlue")
         sum_jet_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "JetBlue", "Pre-Discount Cost"].sum()
+        total_pre_discount = total_prism_pre_discount + sum_jet_pre_dis_cost
         jet_pre_dis_cost = "$" + str(round(sum_jet_pre_dis_cost,2))
         jet_blue_list.append(jet_pre_dis_cost)
         sum_jet_fare = df.loc[df["Savings Alliance Classification"] == "JetBlue", "Fare"].sum()
+        total_actual_spend = total_prism_actual_spend + sum_jet_fare
         jet_fare = "$" + str(round(sum_jet_fare, 2))
         jet_blue_list.append(jet_fare)
         vol = len(jet_indices)/len(df.index)
         vol = (vol*100)
+        total_vol = total_prism_vol + vol
         jet_vol = str(round(vol, 2)) + "%"
         jet_blue_list.append(jet_vol)
         sum_jet_savings = df.loc[df["Savings Alliance Classification"] == "JetBlue", "Savings"].sum()
+        total_savings = total_prism_savings + sum_jet_savings
         jet_savings = "$" + str(round(sum_jet_savings, 2))
         jet_blue_list.append(jet_savings)
         net = (sum_jet_savings / sum_jet_pre_dis_cost)*100
+        total_net = total_prism_net + net
         jet_net = str(round(net, 2)) + "%"
         jet_blue_list.append(jet_net)
         sum_savings = df["Savings"].sum()
+        total_final_savings = total_prism_savings + sum_savings * 2
+        total_final_savings = "$" + str(round(total_final_savings, 2))
         savings = "$" + str(round(sum_savings, 2))
         jet_blue_list.append(savings)
 
         emi_list.append("Emirates")
         sum_emi_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "Emirates", "Pre-Discount Cost"].sum()
+        total_pre_discount = total_pre_discount + sum_emi_pre_dis_cost
+        total_pre_discount = "$" + str(round(total_pre_discount, 2))
         emi_pre_dis_cost = "$" + str(round(sum_emi_pre_dis_cost, 2))
         emi_list.append(emi_pre_dis_cost)
         sum_emi_fare = df.loc[df["Savings Alliance Classification"] == "Emirates", "Fare"].sum()
+        total_actual_spend = total_actual_spend + sum_emi_fare
+        total_actual_spend = "$" + str(round(total_actual_spend, 2))
         emi_fare = "$" + str(round(sum_emi_fare, 2))
         emi_list.append(emi_fare)
         vol = len(emi_indices)/len(df.index)
         vol = (vol*100)
+        total_vol = total_vol + vol
+        total_vol = str(round(total_vol, 2)) + "%"
         emi_vol = str(round(vol,2)) + "%"
         emi_list.append(emi_vol)
         sum_emi_savings = df.loc[df["Savings Alliance Classification"] == "Emirates", "Savings"].sum()
+        total_savings = total_savings + sum_emi_savings
+        total_savings = "$" + str(round(total_savings, 2))
         emi_savings = "$" + str(round(sum_emi_savings,2))
         emi_list.append(emi_savings)
         net = (sum_emi_savings / sum_emi_pre_dis_cost)*100
+        total_net = total_net + net
+        total_net = str(round(total_net, 2)) + "%"
         emi_net = str(round(net,2)) + "%"
         emi_list.append(emi_net)
         emi_list.append(savings)
         
-        table = {"jet_blue_list": jet_blue_list, "emi_list": emi_list, "prism_list": prism_airlines_disc_list}
-        for i in prism_airlines_disc_list:
-            for j in i:
-                if j.isalpha():
-                    pass
-                elif j.isalpha() and j.__contains__("%"):
-                    sum = sum + j
-                    print(sum)
-        # prism_pre_discount_sum = 0
-        # for i in range(len(prism_airlines_disc_list)):
-        #     for j in prism_airlines_disc_list[i]:
-        #         print(j)
-                # convert_prism_pre_discount = int(prism_airlines_disc_list[i][j][1])
-                # prism_pre_discount_sum += convert_prism_pre_discount
-        # print(prism_pre_discount_sum)
+        
+        total_list.append(total_pre_discount)
+        total_list.append(total_actual_spend)
+        total_list.append(total_vol)
+        total_list.append(total_savings)
+        total_list.append(total_net)
+        total_list.append(total_final_savings)
+        table = {"jet_blue_list": jet_blue_list, "emi_list": emi_list, "prism_list": prism_airlines_disc_list, "total_list": total_list}
+
         # Values to populate on graphs
-        final_pre_discount = sum_jet_pre_dis_cost + sum_emi_pre_dis_cost
+        final_pre_discount = sum_jet_pre_dis_cost + sum_emi_pre_dis_cost + total_prism_pre_discount
         request.session['final_pre_discount'] = final_pre_discount
-        final_savings = sum_jet_savings + sum_emi_savings
+        final_savings = sum_jet_savings + sum_emi_savings + total_prism_savings
         request.session['final_savings'] = final_savings
-        actual_spend = sum_jet_fare + sum_emi_fare
+        actual_spend = sum_jet_fare + sum_emi_fare + total_prism_actual_spend
         request.session['actual_spend'] = actual_spend
 
         # Deleting previous version of CSV - raw data file
