@@ -10,6 +10,49 @@ h3, h6{
   text-align: center;
   color: #154360;
 }
+.btn.btn-primary{
+  color: #154360; 
+  border: 2px solid #154360;
+  background-color: white;
+  font-weight: bold;
+}
+.btn.btn-primary:hover{
+  background-color: #123b54;
+  border: 2px solid #123b54;
+  color: white;
+  font-weight: bold;
+}
+ul.dropdown-menu.dropdown-item > li:a{
+  color: #154360; 
+  border: 2px solid #154360;
+  background-color: white;
+  font-weight: bold;
+}
+ul.dropdown-menu.dropdown-item > li:hover{
+  background-color: #154360;
+  border: 2px solid #154360;
+  color: white;
+  font-weight: bold;
+}
+.render_field{
+  border:0px; 
+  padding:0; 
+  margin: 0; 
+  font-weight: bold;
+  color: #154360;
+  text-align: center; 
+  font-size:25px;
+}
+.spinner-border{
+  color: #154360;
+  border-color: #154360;
+  border: 2px solid #154360;
+}
+.spinner-grow{
+  color: #154360;
+  border-color: #154360;
+  border: 2px solid #154360;
+}
 p.text-center{
   text-align: center;
   font-size: 12px;

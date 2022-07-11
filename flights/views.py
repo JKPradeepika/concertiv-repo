@@ -30,11 +30,11 @@ def half_year(quarter):
         return "H2"
 
 # Function to read Group Mappings for Preferred Savings Classifiers
-def read_group_mappings():
-    username = os.getlogin()
-    user_path = Path(os.path.join("C:/Users", username))
-    group_deals_path = Path(os.path.join(user_path, "Dropbox (Concertiv)", "Ve Arc Sharing", "Group Airline Discount Mapping", "Group Airline Discounts"))
-    path = PureWindowsPath(group_deals_path)
+def read_group_mappings(customer_name, quarter, year):
+    win_etl_file_path = files_path()
+    win_etl_output_file_path = Path(os.path.join(win_etl_file_path, customer_name))
+    reports_path = Path(os.path.join(win_etl_output_file_path, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
+    path = PureWindowsPath(reports_path)
     full_file_path = Path(os.path.join(path, "Group Airline Discounts Mapping.xlsx"))
     csv_file_path = Path(os.path.join(path, "Group Airline Discounts Mapping.csv"))
     return full_file_path, csv_file_path
@@ -121,8 +121,8 @@ def savings_classifier(alliance_names, departure_date, booking_class_code, emi_r
 
 
 # Function assign discount based on JetBlue reference_list and indices
-def jet_tour_code_and_ticket_designator(disc, jet_discount_list, jet_indices_list):
-    full_file_path, csv_file_path = read_group_mappings()
+def jet_tour_code_and_ticket_designator(disc, jet_discount_list, jet_indices_list, customer_name, quarter, year):
+    full_file_path, csv_file_path = read_group_mappings(customer_name, quarter, year)
     xl = pd.ExcelFile(full_file_path)
     for sheet in xl.sheet_names:
         if sheet == "JetBlue":
@@ -134,8 +134,8 @@ def jet_tour_code_and_ticket_designator(disc, jet_discount_list, jet_indices_lis
     return disc
 
 # Function assign discount based on Singapore reference_list and indices
-def sing_tour_code_and_ticket_designator(disc, sing_discount_list, sing_ctv_reference, sing_indices_list):
-    full_file_path, csv_file_path = read_group_mappings()
+def sing_tour_code_and_ticket_designator(disc, sing_discount_list, sing_ctv_reference, sing_indices_list, customer_name, quarter, year):
+    full_file_path, csv_file_path = read_group_mappings(customer_name, quarter, year)
     xl = pd.ExcelFile(full_file_path)
     for sheet in xl.sheet_names:
         if sheet == "Singapore":
@@ -159,8 +159,8 @@ def sing_tour_code_and_ticket_designator(disc, sing_discount_list, sing_ctv_refe
     return disc
 
 # Function assign discount based on Emirate reference_list and indices
-def emi_tour_code_and_ticket_designator(disc, emi_discount_list, emi_indices_list):
-    full_file_path, csv_file_path = read_group_mappings()
+def emi_tour_code_and_ticket_designator(disc, emi_discount_list, emi_indices_list, customer_name, quarter, year):
+    full_file_path, csv_file_path = read_group_mappings(customer_name, quarter, year)
     xl = pd.ExcelFile(full_file_path)
     for sheet in xl.sheet_names:
         if sheet == "Emirates":
@@ -173,8 +173,8 @@ def emi_tour_code_and_ticket_designator(disc, emi_discount_list, emi_indices_lis
 
 
 # Function assign discount based on Turkish reference_list and indices
-def tur_tour_code_and_ticket_designator(disc, tur_discount_list, tur_indices_list):
-    full_file_path, csv_file_path = read_group_mappings()
+def tur_tour_code_and_ticket_designator(disc, tur_discount_list, tur_indices_list, customer_name, quarter, year):
+    full_file_path, csv_file_path = read_group_mappings(customer_name, quarter, year)
     xl = pd.ExcelFile(full_file_path)
     for sheet in xl.sheet_names:
         if sheet == "Turkish":
@@ -185,8 +185,8 @@ def tur_tour_code_and_ticket_designator(disc, tur_discount_list, tur_indices_lis
     assign_discount(disc, tur_discount_list, tur_indices_list, reference_list, df)
 
 
-def qan_tour_code_and_ticket_designator(disc, qan_discount_list, qan_indices_list):
-    full_file_path, csv_file_path = read_group_mappings()
+def qan_tour_code_and_ticket_designator(disc, qan_discount_list, qan_indices_list, customer_name, quarter, year):
+    full_file_path, csv_file_path = read_group_mappings(customer_name, quarter, year)
     xl = pd.ExcelFile(full_file_path)
     for sheet in xl.sheet_names:
         if sheet == "Qantas":
@@ -248,12 +248,12 @@ def raw_data(request):
 
             context = {'form': form, 'file': full_file_name, 'message': message}
 
-            return render(request, 'get_raw_data.html', context)
+            return render(request, 'flights/get_raw_data.html', context)
 
     else:
         form = forms.RawdataForm()
 
-    return render(request, 'raw_data.html', {'form': form})
+    return render(request, 'flights/raw_data.html', {'form': form})
 
 
 # Function which process raw data to final data
@@ -286,11 +286,11 @@ def process_data(request):
         df.drop(columns=del_col_names, inplace=True, axis=1)
 
         # Dropping unnecessary rows
-        non_airport_codes = ["RTE-2V", "NYP-2V", "SEAAV", "HUD-2V", "WAS-2V", "XXX"]
+        non_airport_codes = ["RTE-2V", "NYP-2V", "PHL-2V", "SEAAV", "BBY-2V", "PVD-2V", "HUD-2V", "WAS-2V", "XXX"]
         for i in non_airport_codes:
             if df["Origin Airport Code"].str.contains(i).any():
                 del_rows = (df[df["Origin Airport Code"].str.contains(i)].index.values)
-                df.drop(del_rows, axis=0, inplace=True)
+                df.drop(del_rows, inplace=True, axis=0)
 
         # Loading JSON files
         airport_json_file_path = Path(os.path.join(cwd,"static", "json", "airport.json"))
@@ -413,14 +413,14 @@ def process_data(request):
                 jet_indexes_list.append(jet_indices[i])
                 savings_tour_code[jet_indices[i]] = "Not Available, Not Matched"
                 savings_ticket_designator[jet_indices[i]] = "Available, Matched"
-                jet_tour_code_and_ticket_designator(disc, jet_discount_list, jet_indexes_list)
+                jet_tour_code_and_ticket_designator(disc, jet_discount_list, jet_indexes_list, customer_name, quarter, year)
             
             elif df["Tour Code"].iloc[jet_indices[i]] == "CC1103" and df["Ticket Designator"].iloc[jet_indices[i]] == "nan":
                 jet_discount_list.append(contract_discount_classifier[jet_indices[i]])
                 jet_indexes_list.append(jet_indices[i])
                 savings_tour_code[jet_indices[i]] = "Available, Matched"
                 savings_ticket_designator[jet_indices[i]] = "Not Available, Not Matched"
-                jet_tour_code_and_ticket_designator(disc, jet_discount_list, jet_indexes_list)
+                jet_tour_code_and_ticket_designator(disc, jet_discount_list, jet_indexes_list, customer_name, quarter, year)
                             
             elif df["Tour Code"].iloc[jet_indices[i]] == "CC1103" and df["Ticket Designator"].iloc[jet_indices[i]] != "nan":
                 jet_discount_list.append(contract_discount_classifier[jet_indices[i]])
@@ -430,7 +430,7 @@ def process_data(request):
                     savings_ticket_designator[jet_indices[i]] = "Available, Not Matched - " + df["Ticket Designator"].iloc[jet_indices[i]]
                 else:
                     savings_ticket_designator[jet_indices[i]] = "Available, Matched"
-                jet_tour_code_and_ticket_designator(disc, jet_discount_list, jet_indexes_list)
+                jet_tour_code_and_ticket_designator(disc, jet_discount_list, jet_indexes_list, customer_name, quarter, year)
 
             elif df["Tour Code"].iloc[jet_indices[i]] != "nan" and df["Ticket Designator"].iloc[jet_indices[i]] == "CPO2":
                 jet_discount_list.append(contract_discount_classifier[jet_indices[i]])
@@ -440,7 +440,7 @@ def process_data(request):
                 else:
                     savings_tour_code[jet_indices[i]] = "Available, Matched"
                 savings_ticket_designator[jet_indices[i]] = "Available, Matched"
-                jet_tour_code_and_ticket_designator(disc, jet_discount_list, jet_indexes_list)
+                jet_tour_code_and_ticket_designator(disc, jet_discount_list, jet_indexes_list, customer_name, quarter, year)
 
             elif df["Tour Code"].iloc[jet_indices[i]] == "nan" and df["Ticket Designator"].iloc[jet_indices[i]] == "nan":
                 savings_tour_code[jet_indices[i]] = "Not Available, Not Matched"
@@ -465,14 +465,14 @@ def process_data(request):
                 emi_indexes_list.append(emi_indices[j])
                 savings_tour_code[emi_indices[j]] = "Not Available, Not Matched"
                 savings_ticket_designator[emi_indices[j]] = "Available, Matched"
-                emi_tour_code_and_ticket_designator(disc, emi_discount_list, emi_indexes_list)
+                emi_tour_code_and_ticket_designator(disc, emi_discount_list, emi_indexes_list, customer_name, quarter, year)
                     
             elif df["Tour Code"].iloc[emi_indices[j]] == "ZZKBP3ZZ" and df["Ticket Designator"].iloc[emi_indices[j]] == "nan":
                 emi_discount_list.append(contract_discount_classifier[emi_indices[j]])
                 emi_indexes_list.append(emi_indices[j])
                 savings_tour_code[emi_indices[j]] = "Available, Matched"
                 savings_ticket_designator[emi_indices[j]] = "Not Available, Not Matched"
-                emi_tour_code_and_ticket_designator(disc, emi_discount_list, emi_indexes_list)
+                emi_tour_code_and_ticket_designator(disc, emi_discount_list, emi_indexes_list, customer_name, quarter, year)
             
             elif df["Tour Code"].iloc[emi_indices[j]] == "ZZKBP3ZZ" and df["Ticket Designator"].iloc[emi_indices[j]] != "nan":
                 emi_discount_list.append(contract_discount_classifier[emi_indices[j]])
@@ -482,14 +482,14 @@ def process_data(request):
                     savings_ticket_designator[emi_indices[j]] = "Available, Not Matched - " + df["Ticket Designator"].iloc[emi_indices[j]]
                 else:
                     savings_ticket_designator[emi_indices[j]] = "Available, Matched"
-                emi_tour_code_and_ticket_designator(disc, emi_discount_list, emi_indexes_list)
+                emi_tour_code_and_ticket_designator(disc, emi_discount_list, emi_indexes_list, customer_name, quarter, year)
 
             elif (df["Tour Code"].iloc[emi_indices[j]] != "nan" or df["Tour Code"].iloc[emi_indices[j]] != "ZZKBP3ZZ") and df["Ticket Designator"].iloc[emi_indices[j]] == "KBP3":
                 emi_discount_list.append(contract_discount_classifier[emi_indices[j]])
                 emi_indexes_list.append(emi_indices[j])
                 savings_tour_code[emi_indices[j]] = "Available, Not Matched - " + df["Tour Code"].iloc[emi_indices[j]]
                 savings_ticket_designator[emi_indices[j]] = "Available, Matched"
-                emi_tour_code_and_ticket_designator(disc, emi_discount_list, emi_indexes_list)
+                emi_tour_code_and_ticket_designator(disc, emi_discount_list, emi_indexes_list, customer_name, quarter, year)
 
             elif df["Tour Code"].iloc[emi_indices[j]] == "nan" and df["Ticket Designator"].iloc[emi_indices[j]] == "nan":
                 savings_tour_code[emi_indices[j]] = "Not Available, Not Matched"
@@ -515,14 +515,14 @@ def process_data(request):
                 tur_indexes_list.append(tur_indices[t])
                 savings_tour_code[tur_indices[t]] = "Not Available, Not Matched"
                 savings_ticket_designator[tur_indices[t]] = "Available, Matched"
-                tur_tour_code_and_ticket_designator(disc, tur_discount_list, tur_indexes_list)
+                tur_tour_code_and_ticket_designator(disc, tur_discount_list, tur_indexes_list, customer_name, quarter, year)
                     
             elif df["Tour Code"].iloc[tur_indices[t]] == "CCC79751" and df["Ticket Designator"].iloc[tur_indices[t]] == "nan":
                 tur_discount_list.append(contract_discount_classifier[tur_indices[t]])
                 tur_indexes_list.append(tur_indices[t])
                 savings_tour_code[tur_indices[t]] = "Available, Matched"
                 savings_ticket_designator[tur_indices[t]] = "Not Available, Not Matched"
-                tur_tour_code_and_ticket_designator(disc, tur_discount_list, tur_indexes_list)
+                tur_tour_code_and_ticket_designator(disc, tur_discount_list, tur_indexes_list, customer_name, quarter, year)
             
             elif df["Tour Code"].iloc[tur_indices[t]] == "CCC79751" and df["Ticket Designator"].iloc[tur_indices[t]] != "nan":
                 tur_discount_list.append(contract_discount_classifier[tur_indices[t]])
@@ -532,7 +532,7 @@ def process_data(request):
                     savings_ticket_designator[tur_indices[t]] = "Available, Not Matched - " + df["Ticket Designator"].iloc[tur_indices[t]]
                 else:
                     savings_ticket_designator[tur_indices[t]] = "Available, Matched"
-                tur_tour_code_and_ticket_designator(disc, tur_discount_list, tur_indexes_list)
+                tur_tour_code_and_ticket_designator(disc, tur_discount_list, tur_indexes_list, customer_name, quarter, year)
 
             elif df["Ticket Designator"].iloc[tur_indices[t]] != "nan"  and df["Ticket Designator"].iloc[tur_indices[t]] == "FS09":
                 tur_discount_list.append(contract_discount_classifier[tur_indices[t]])
@@ -542,7 +542,7 @@ def process_data(request):
                 else:
                     savings_tour_code[tur_indices[t]] = "Available, Matched"
                 savings_ticket_designator[tur_indices[t]] = "Available, Matched"
-                tur_tour_code_and_ticket_designator(disc, tur_discount_list, tur_indexes_list)
+                tur_tour_code_and_ticket_designator(disc, tur_discount_list, tur_indexes_list, customer_name, quarter, year)
 
             elif df["Tour Code"].iloc[tur_indices[t]] == "nan" and df["Ticket Designator"].iloc[tur_indices[t]] == "nan":
                 savings_tour_code[tur_indices[t]] = "Not Available, Not Matched"
@@ -567,14 +567,14 @@ def process_data(request):
                 qan_indexes_list.append(qan_indices[q])
                 savings_tour_code[qan_indices[q]] = "Available, Matched"
                 savings_ticket_designator[qan_indices[q]] = "Not Applicable"
-                qan_tour_code_and_ticket_designator(disc, qan_discount_list, qan_indexes_list)
+                qan_tour_code_and_ticket_designator(disc, qan_discount_list, qan_indexes_list, customer_name, quarter, year)
 
             elif df["Tour Code"].iloc[qan_indices[t]] != "BOT":
                 qan_discount_list.append(contract_discount_classifier[qan_indices[q]])
                 qan_indexes_list.append(qan_indices[q])
                 savings_tour_code[qan_indices[q]] = "Available, Not Matched - " + df["Tour Code"].iloc[qan_indices[q]]
                 savings_ticket_designator[qan_indices[q]] = "Not Applicable"
-                qan_tour_code_and_ticket_designator(disc, qan_discount_list, qan_indexes_list)
+                qan_tour_code_and_ticket_designator(disc, qan_discount_list, qan_indexes_list, customer_name, quarter, year)
 
             elif df["Tour Code"].iloc[qan_indices[q]] == "nan":
                 savings_tour_code[qan_indices[q]] = "Not Available, Not Matched"
@@ -587,14 +587,14 @@ def process_data(request):
                 sing_indexes_list.append(sing_indices[s])
                 savings_tour_code[sing_indices[s]] = "Not Available, Not Matched"
                 savings_ticket_designator[sing_indices[s]] = "Available, Matched"
-                sing_tour_code_and_ticket_designator(disc, sing_discount_list, sing_ctv_reference,sing_indexes_list)
+                sing_tour_code_and_ticket_designator(disc, sing_discount_list, sing_ctv_reference,sing_indexes_list, customer_name, quarter, year)
             
             elif df["Tour Code"].iloc[sing_indices[s]] == "A74PH" and df["Ticket Designator"].iloc[sing_indices[s]] == "nan":
                 sing_discount_list.append(contract_discount_classifier[sing_indices[s]])
                 sing_indexes_list.append(sing_indices[s])
                 savings_tour_code[sing_indices[s]] = "Available, Matched"
                 savings_ticket_designator[sing_indices[s]] = "Not Available, Not Matched"
-                sing_tour_code_and_ticket_designator(disc, sing_discount_list, sing_ctv_reference, sing_indexes_list)
+                sing_tour_code_and_ticket_designator(disc, sing_discount_list, sing_ctv_reference, sing_indexes_list, customer_name, quarter, year)
                             
             elif df["Tour Code"].iloc[sing_indices[s]] == "A74PH" and df["Ticket Designator"].iloc[sing_indices[s]] != "nan":
                 sing_discount_list.append(contract_discount_classifier[sing_indices[s]])
@@ -604,7 +604,7 @@ def process_data(request):
                     savings_ticket_designator[sing_indices[s]] = "Available, Not Matched - " + df["Ticket Designator"].iloc[sing_indices[s]]
                 else:
                     savings_ticket_designator[sing_indices[s]] = "Available, Matched"
-                sing_tour_code_and_ticket_designator(disc, sing_discount_list, sing_ctv_reference, sing_indexes_list)
+                sing_tour_code_and_ticket_designator(disc, sing_discount_list, sing_ctv_reference, sing_indexes_list, customer_name, quarter, year)
 
             elif df["Tour Code"].iloc[sing_indices[s]] != "nan" and df["Ticket Designator"].iloc[sing_indices[s]] == "CDM3":
                 sing_discount_list.append(contract_discount_classifier[sing_indices[s]])
@@ -614,7 +614,7 @@ def process_data(request):
                 else:
                     savings_tour_code[sing_indices[s]] = "Available, Matched"
                 savings_ticket_designator[sing_indices[s]] = "Available, Matched"
-                sing_tour_code_and_ticket_designator(disc, sing_discount_list, sing_ctv_reference, sing_indexes_list)
+                sing_tour_code_and_ticket_designator(disc, sing_discount_list, sing_ctv_reference, sing_indexes_list, customer_name, quarter, year)
 
             elif df["Tour Code"].iloc[sing_indices[s]] == "nan" and df["Ticket Designator"].iloc[sing_indices[s]] == "nan":
                 savings_tour_code[sing_indices[s]] = "Not Available, Not Matched"
@@ -763,54 +763,57 @@ def process_data(request):
         jet_blue_list.append(jet_net)
         sum_savings = df["Savings"].sum()
         total_final_savings = total_prism_savings + sum_savings * 2
-        total_final_savings = "$" + str(round(total_final_savings, 2))
         savings = "$" + str(round(sum_savings, 2))
         jet_blue_list.append(savings)
 
-        emi_list.append("Emirates")
-        sum_emi_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "Emirates", "Pre-Discount Cost"].sum()
-        total_pre_discount = total_pre_discount + sum_emi_pre_dis_cost
+        # emi_list.append("Emirates")
+        # sum_emi_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "Emirates", "Pre-Discount Cost"].sum()
+        # total_pre_discount = total_pre_discount + sum_emi_pre_dis_cost
+        # emi_pre_dis_cost = "$" + str(round(sum_emi_pre_dis_cost, 2))
+        # emi_list.append(emi_pre_dis_cost)
+        # sum_emi_fare = df.loc[df["Savings Alliance Classification"] == "Emirates", "Fare"].sum()
+        # total_actual_spend = total_actual_spend + sum_emi_fare
+        # emi_fare = "$" + str(round(sum_emi_fare, 2))
+        # emi_list.append(emi_fare)
+        # vol = len(emi_indices)/len(df.index)
+        # vol = (vol*100)
+        # total_vol = total_vol + vol
+        # emi_vol = str(round(vol,2)) + "%"
+        # emi_list.append(emi_vol)
+        # sum_emi_savings = df.loc[df["Savings Alliance Classification"] == "Emirates", "Savings"].sum()
+        # total_savings = total_savings + sum_emi_savings
+        # emi_savings = "$" + str(round(sum_emi_savings,2))
+        # emi_list.append(emi_savings)
+        # net = (sum_emi_savings / sum_emi_pre_dis_cost)*100
+        # total_net = total_net + net
+        # emi_net = str(round(net,2)) + "%"
+        # emi_list.append(emi_net)
+        # emi_list.append(savings)
+        
         total_pre_discount = "$" + str(round(total_pre_discount, 2))
-        emi_pre_dis_cost = "$" + str(round(sum_emi_pre_dis_cost, 2))
-        emi_list.append(emi_pre_dis_cost)
-        sum_emi_fare = df.loc[df["Savings Alliance Classification"] == "Emirates", "Fare"].sum()
-        total_actual_spend = total_actual_spend + sum_emi_fare
-        total_actual_spend = "$" + str(round(total_actual_spend, 2))
-        emi_fare = "$" + str(round(sum_emi_fare, 2))
-        emi_list.append(emi_fare)
-        vol = len(emi_indices)/len(df.index)
-        vol = (vol*100)
-        total_vol = total_vol + vol
-        total_vol = str(round(total_vol, 2)) + "%"
-        emi_vol = str(round(vol,2)) + "%"
-        emi_list.append(emi_vol)
-        sum_emi_savings = df.loc[df["Savings Alliance Classification"] == "Emirates", "Savings"].sum()
-        total_savings = total_savings + sum_emi_savings
-        total_savings = "$" + str(round(total_savings, 2))
-        emi_savings = "$" + str(round(sum_emi_savings,2))
-        emi_list.append(emi_savings)
-        net = (sum_emi_savings / sum_emi_pre_dis_cost)*100
-        total_net = total_net + net
-        total_net = str(round(total_net, 2)) + "%"
-        emi_net = str(round(net,2)) + "%"
-        emi_list.append(emi_net)
-        emi_list.append(savings)
-        
-        
         total_list.append(total_pre_discount)
+        total_actual_spend = "$" + str(round(total_actual_spend, 2))
         total_list.append(total_actual_spend)
+        total_vol = str(round(total_vol, 2)) + "%"
         total_list.append(total_vol)
+        total_savings = "$" + str(round(total_savings, 2))
         total_list.append(total_savings)
+        total_net = str(round(total_net, 2)) + "%"
         total_list.append(total_net)
+        total_final_savings = "$" + str(round(total_final_savings, 2))
         total_list.append(total_final_savings)
-        table = {"jet_blue_list": jet_blue_list, "emi_list": emi_list, "prism_list": prism_airlines_disc_list, "total_list": total_list}
+        # table = {"jet_blue_list": jet_blue_list, "emi_list": emi_list, "prism_list": prism_airlines_disc_list, "total_list": total_list}
+        table = {"jet_blue_list": jet_blue_list, "prism_list": prism_airlines_disc_list, "total_list": total_list}
 
         # Values to populate on graphs
-        final_pre_discount = sum_jet_pre_dis_cost + sum_emi_pre_dis_cost + total_prism_pre_discount
+        # final_pre_discount = sum_jet_pre_dis_cost + sum_emi_pre_dis_cost + total_prism_pre_discount
+        final_pre_discount = sum_jet_pre_dis_cost + total_prism_pre_discount
         request.session['final_pre_discount'] = final_pre_discount
-        final_savings = sum_jet_savings + sum_emi_savings + total_prism_savings
+        # final_savings = sum_jet_savings + sum_emi_savings + total_prism_savings
+        final_savings = sum_jet_savings + total_prism_savings
         request.session['final_savings'] = final_savings
-        actual_spend = sum_jet_fare + sum_emi_fare + total_prism_actual_spend
+        # actual_spend = sum_jet_fare + sum_emi_fare + total_prism_actual_spend
+        actual_spend = sum_jet_fare + total_prism_actual_spend
         request.session['actual_spend'] = actual_spend
 
         # Deleting previous version of CSV - raw data file
@@ -825,18 +828,13 @@ def process_data(request):
             os.remove(air_prism_file)
 
         # Deleting CSV file of Group mappings
-        username = os.getlogin()
-        user_path = Path(os.path.join("C:/Users", username))
-        group_deals_path = Path(os.path.join(user_path, "Dropbox (Concertiv)", "Ve Arc Sharing", "Group Airline Discount Mapping", "Group Airline Discounts"))
-        path = PureWindowsPath(group_deals_path)
-        csv_file_path = Path(os.path.join(path, "Group Airline Discounts Mapping.csv"))
-        os.chdir(path)
+        csv_file_path = Path(os.path.join(new_file_path, "Group Airline Discounts Mapping.csv"))
         if os.path.exists(csv_file_path):
             os.remove(csv_file_path)
 
     os.chdir(cwd)
     context={'table': table}
-    return render(request, 'process_data.html', context)
+    return render(request, 'flights/process_data.html', context)
 
 # Displaying DataFrame in Graphs using Charts.js
 def get_graphs(request):
@@ -845,4 +843,4 @@ def get_graphs(request):
     actual_spend = request.session['actual_spend']
     data = {"prediscount": final_pre_discount, "savings": final_savings, "spend": actual_spend}
     context={'graph':data}
-    return render(request, 'get_graphs.html', context)
+    return render(request, 'flights/get_graphs.html', context)

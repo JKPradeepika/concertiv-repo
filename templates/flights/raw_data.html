@@ -1,0 +1,21 @@
+{% extends 'base.html'%}
+
+{% block content %}
+<form action="raw-data" method="post">
+<div class="container-fluid text-center">
+  <br><br><br>
+  <h3>Enter details for CPR</h3>
+    {% csrf_token %}
+    <center>
+      <table>
+        <br>
+        {{ form.as_table }}
+      </table>
+    </center>
+    <br>
+    <button type="submit"  class="btn btn-primary">Submit</button>
+  </div>
+</form>
+{% endblock %}
+</body>
+</html>

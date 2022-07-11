@@ -1,10 +1,12 @@
 {% extends 'base.html'%}
-
+{% load widget_tweaks %}
 {% block content %}
     
 <div class="container-fluid text-center">
     <br><br><br>
-    <h3>Altour - Air - Q1 2022</h3><br /><br /><br /><br /><br>
+    {% render_field form.customer_name class="render_field" %}
+    {% render_field form.year class="render_field" %}
+    {% render_field form.quarter class="render_field"%}<br /><br /><br /><br /><br>
     <form method="post" action="graphs">
         {% csrf_token %}
         <table class="table table-striped table-borderless text-center">
@@ -31,7 +33,7 @@
                 {% for j in table.emi_list %}
                     <td> {{ j }} </td>
                 {% endfor %}
-            </tr>
+            </tr> 
             <tr>
                 {% for k in table.total_list %}
                     <td> {{ k }} </td>
@@ -46,3 +48,26 @@
 {% endblock %}
 </body>
 </html>
+
+{% comment %} {% extends 'base.html'%}
+{% load widget_tweaks %}
+{% block content %}
+<form action="process-data" method="post">
+  {% csrf_token %}
+  <div class="container-fluid text-center">
+    <br><br><br>
+    {% render_field form.customer_name class="render_field" %}
+    {% render_field form.year class="render_field" %}
+    {% render_field form.quarter class="render_field"%}
+    <br><br>
+    <br> <br>
+    <p class="data"> {{ message }} </p>
+    <div class="spinner-border"></div>
+    <div class="spinner-grow" role="status"></div>
+    <br>
+    <br>
+    <button type="submit" class="btn btn-primary" hidden>Process Data</button>
+  </div>
+  </form>
+
+{% endblock %} {% endcomment %}
