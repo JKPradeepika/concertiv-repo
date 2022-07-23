@@ -1,5 +1,9 @@
-{% extends 'base.html'%}
-
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/bootnavbar.css' %}" />
 {% block content %}
-    {{ message }}
+    <h1>{{ status_code}}</h1>
+    <hr>
+    <div class="render_field">
+        {{ error_message }}
+    </div>
 {% endblock %}

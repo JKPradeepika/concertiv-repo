@@ -38,7 +38,7 @@ ul.dropdown-menu.dropdown-item > li:hover{
   border:0px; 
   padding:0; 
   margin: 0; 
-  font-weight: 400;
+  font-weight: 500;
   color: #154360;
   text-align: center; 
   font-size:25px;
@@ -97,6 +97,10 @@ div.container-fluid.home-container{
 .table.table-striped.table-borderless th{
   color: #154360;
   font-weight: bold;
+}
+h1{
+  color: #154360;
+  text-align: center;
 }
 .dropdown-menu {
   margin-top: 0;
