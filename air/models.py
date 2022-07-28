@@ -25,3 +25,10 @@ class Airline(models.Model):
 
     def __str__(self):
         return self.carrier_name
+
+class Preference(models.Model):
+    customer_name = models.CharField(max_length=50)
+    prefered_airline = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return self.customer_name
