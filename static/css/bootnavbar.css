@@ -67,7 +67,7 @@ p.text-center{
   color: #154360;
   font-weight: bold;
 }
-table{
+table.raw_data_table {
   color: #154360;
 }
 p.data{
