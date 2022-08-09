@@ -1,5 +1,9 @@
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.urls import reverse
 from django.views.generic import TemplateView, View
+from matplotlib.pyplot import axis
+from pyparsing import col
 from .forms import *
 from .models import *
 
@@ -264,6 +268,7 @@ class RawDataView(BasicView):
                     csv_file_path = os.path.join(path, csv_file)
                     request.session['csv_file_path'] = csv_file_path
             try:
+                message = ""
                 if os.path.exists(file_path):
                     message = "Found the file. Process the data..."
                     xl = pd.ExcelFile(file_path)
@@ -280,9 +285,14 @@ class RawDataView(BasicView):
             form = self.form_class(request.POST)
         return render(request, self.template_name, {'form': form})
 
+class SuccessView(TemplateView):
+    template_name = 'air/success.html'
+    def get(self, request, *args, **kwargs):
+        return HttpResponseRedirect(reverse('success', args=request))
 
 class ProcessDataView(BasicView):
     template_name = 'air/process_data.html'
+    error_url = 'air/error.html'
 
     def post(self, request, *args, **kwargs):
         cwd = os.getcwd()
@@ -295,6 +305,7 @@ class ProcessDataView(BasicView):
 
         # Reading CSV file
         try:
+            new_file_path = ""
             if os.path.exists(csv_file_path):
                 df = pd.read_csv(csv_file_path)
 
@@ -303,32 +314,23 @@ class ProcessDataView(BasicView):
                 with open(config_json_file_path) as f:
                     data = json.load(f)
                     mappings = data[customer_name]
-
-                del_col_names, del_rows = [], []
+                
+                del_rows = []
                 
                 # Renaming columns with concertiv id's
-                df.rename(columns=mappings, inplace=True)
-
-                # Dropping unnecessary columns
-                col_name = df.columns.values.tolist()
-                del_col_names = [i for i in col_name if i[0].islower()]
-                df.drop(columns=del_col_names, inplace=True, axis=1)
-
-                # Dropping unnecessary rows
-                df = df.dropna(subset="Carrier Code")
+                headers = []
+                for k, v in mappings.items():
+                    headers.append(v)
+                df.columns = headers
                 
-                carrier_codes = ["2V", "9F"]
-                for i in carrier_codes:
-                    if df["Carrier Code"].str.contains(i).any():
-                        del_rows = df[df["Carrier Code"].str.contains(i)].index.values
-                        df.drop(del_rows, inplace=True, axis=0)
+                df_headers = list(df.columns.values)
+                for i in df_headers:
+                    if i == '':
+                        df.drop(['{0}'.format(i)], axis=1)
                 
-                non_airport_codes = ["XXX", "YYY", "ZZZ"]
-                for i in non_airport_codes:
-                    if df["Origin Airport Code"].str.contains(i).any():
-                        del_rows = df[df["Origin Airport Code"].str.contains(i)].index.values
-                        df.drop(del_rows, inplace=True, axis=0)
-
+                df.drop(df[(df["Carrier Code"] == "2V") | (df["Carrier Code"] == "9F")].index, inplace=True)
+                df.drop(df[(df["Origin Airport Code"] == "XXX") | (df["Origin Airport Code"] == "YYY") | (df["Origin Airport Code"] == "ZZZ")].index, inplace =True)
+                
                 # Get data from database tables
                 prefered_qs = Preference.objects.filter(customer_name = customer_name).values_list('prefered_airline')
                 prefered_airline_data = list(prefered_qs.values())
@@ -346,7 +348,6 @@ class ProcessDataView(BasicView):
                 airport_ori_code = df["Origin Airport Code"].tolist()
                 airport_dest_code = df["Destination Airport Code"].tolist()
                 carrier_code = df["Carrier Code"].tolist()
-
                 # Setting rows display
                 pd.set_option('display.max_rows', 1500)
 
@@ -359,8 +360,8 @@ class ProcessDataView(BasicView):
                 df.insert(4, "PoS", country, True)
                 df.insert(5, "Client", customer_name, True)
                 df.insert(6, "Agency", travel_agency, True)
-                df.insert(7, "Country", df["Point of Sale"], True)
-                df["Carrier Name"] = [i["carrier_name"] for cc in carrier_code for i in airline_data for k, v in i.items() if cc == v]
+                df.insert(7, "Country", country, True)
+                df["Carrier Name"] = [i["carrier_name"] for i in airline_data for cc in carrier_code for k, v in i.items() if cc == v]
                 df["Origin City"] = [i["airport_city"] for oc in airport_ori_code for i in airport_data for k, v in i.items() if oc == v]
                 df["Origin Country"] = ""
                 df["Destination City"] = [i["airport_city"] for dc in airport_dest_code for i in airport_data for k, v in i.items() if dc == v]
@@ -604,7 +605,7 @@ class ProcessDataView(BasicView):
                 # Writing new column names into separate .xlsx file
                 win_etl_file_path = self.base_path()
                 new_file_path = Path(os.path.join(win_etl_file_path, customer_name, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
-                new_file_name = customer_name + "_Air_" + quarter + year + "_FinalData" + ".xlsx"
+                new_file_name = customer_name + "_Air_" + quarter + year + "_"+ country +"_FinalData" + ".xlsx"
                 file_name = Path(os.path.join(new_file_path, new_file_name))
                 df.to_excel(file_name, encoding='utf8', index=False)
                 
@@ -616,24 +617,26 @@ class ProcessDataView(BasicView):
             context = {'message': message}
             return render(request, self.error_url, context)
         finally:
-            # Deleting previous version of CSV - raw data file
-            os.chdir(new_file_path)
-            pre_csv_file = customer_name + "_Air_" + quarter + year + "_" + country + ".csv"
-            if os.path.exists(pre_csv_file):
-                os.remove(pre_csv_file)
+                # Deleting previous version of CSV - raw9* data file
+                os.chdir(new_file_path)
+                pre_csv_file = customer_name + "_Air_" + quarter + year + "_" + country + ".csv"
+                if os.path.exists(pre_csv_file):
+                    os.remove(pre_csv_file)
 
-            # Deleting previous version of CSV - group mappings airline discounts file
-            csv_file_path = Path(os.path.join(new_file_path, "Group Airline Discounts Mapping.csv"))
-            if os.path.exists(csv_file_path):
-                os.remove(csv_file_path)
+                # Deleting previous version of CSV - group mappings airline discounts file
+                csv_file_path = Path(os.path.join(new_file_path, "Group Airline Discounts Mapping.csv"))
+                if os.path.exists(csv_file_path):
+                    os.remove(csv_file_path)
 
-            # Deleting CSV file - Air Prism & Other files
-            air_prism_file = Path(os.path.join(new_file_path, "Air PRISM & Other.csv"))
-            if os.path.exists(air_prism_file):
-                os.remove(air_prism_file)          
-            os.chdir(cwd)
+                # Deleting CSV file - Air Prism & Other files
+                # air_prism_file = Path(os.path.join(new_file_path, "Air PRISM & Other.csv"))
+                # if os.path.exists(air_prism_file):
+                #     os.remove(air_prism_file)          
+            
     
 class GraphsView(TemplateView):
+    cwd = os.getcwd()
+    os.chdir(cwd)
     template_name = 'air/get_graphs.html'
     
     def post(self, request):

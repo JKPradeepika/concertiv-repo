@@ -1,3 +1,11 @@
+.oneschema-iframe {
+  width: 100vw;
+  height: 68vh;
+  border: none;
+  position: absolute;
+  right: 0;
+  top: 15vh;
+}
 .navbar-nav.navbar-center{
   position: relative;
   display: flex;
