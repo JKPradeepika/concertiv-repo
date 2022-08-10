@@ -1,4 +1,7 @@
 from .settings import *
+import os
+
+os.environ["ENV"] = "production"
 
 DEBUG = False
 
