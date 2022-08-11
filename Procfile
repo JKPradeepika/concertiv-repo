@@ -1,1 +1,1 @@
-web: gunicorn CPR.wsgi --log-file -
+web: gunicorn CPR.wsgi
