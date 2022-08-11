@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECRET_KEY = 'django-insecure-cjog9l9qggjf*4at5xa5)h&n@aq_8!txjd*&+8knt7#4ec7$+4'
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-DEBUG = True
+DEBUG = (os.environ.get('DEBUG_VALUE') == 'True')
 
 ALLOWED_HOSTS = ['concertiv-cpr.herokuapp.com']
 

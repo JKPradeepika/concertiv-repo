@@ -20,7 +20,7 @@ class BasicView(View):
     # Function to return config file path
     def config_path(self):
         cwd = os.getcwd()
-        config_json_file_path = Path(os.path.join(cwd, "static", "json", "config.json"))
+        config_json_file_path = Path(os.path.join(cwd, "config.json"))
         with open(config_json_file_path) as f:
             data = json.load(f)
         return data
@@ -310,7 +310,7 @@ class ProcessDataView(BasicView):
                 df = pd.read_csv(csv_file_path)
 
                 # Loading JSON file for column names mappings
-                config_json_file_path = Path(os.path.join(cwd, "static", "json", "config.json"))
+                config_json_file_path = Path(os.path.join(cwd, "config.json"))
                 with open(config_json_file_path) as f:
                     data = json.load(f)
                     mappings = data[customer_name]
