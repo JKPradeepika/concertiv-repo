@@ -228,7 +228,7 @@ class BasicView(View):
         return airline_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings
 
 class HomeView(TemplateView):
-    template_name = 'home.html'
+    template_name = 'air/home.html'
 
 class RawDataView(BasicView):
     form_class = RawdataForm
