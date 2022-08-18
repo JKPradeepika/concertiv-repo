@@ -41,7 +41,7 @@ const importer = oneschemaImporter({
   clientId: "3a21d9c1-bd7a-4ff1-9ccf-0700e40a57f8",
   templateKey: "air",
   webhookKey: "air_webhook",
-  userJwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiPFVTRVJfSUQ-IiwiaXNzIjoiM2EyMWQ5YzEtYmQ3YS00ZmYxLTljY2YtMDcwMGU0MGE1N2Y4In0.RJyoCIsLaJ0DyMWWSxPJ-Se-Z2O0OQ-keMv-WQvEIdw",
+  userJwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiPFVTRVJfSUQ-IiwiaXNzIjoiM2EyMWQ5YzEtYmQ3YS00ZmYxLTljY2YtMDcwMGU0MGE1N2Y4In0.tYD3_KuWqoc7DNtkpWyqtp9CUeTmTpwp3HbphVye-BE",
   config: {
     blockImportIfErrors: true,
   },

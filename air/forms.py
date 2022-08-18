@@ -4,7 +4,7 @@ from .models import Preference
 class RawdataForm(forms.Form):
     customer_name = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Customer Name', 'text-align': 'center'}), label='Enter Customer Name', max_length=100, required=True)
     travel_agency = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Travel Agency', 'text-align': 'center'}), label='Enter Travel Agency', max_length=100, required=True)
-    year = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Year', 'text-align': 'center'}), label='Enter Travel Agency', max_length=4, required=True)
+    year = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Year', 'text-align': 'center'}), label='Year', max_length=4, required=True)
     quarter = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Quarter', 'text-align': 'center'}), label='Enter Quarter', max_length=2, required=True)
     country = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Country', 'text-align': 'center'}), label='Enter Country', max_length=2, required=True)
 
