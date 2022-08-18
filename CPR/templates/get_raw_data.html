@@ -1,0 +1,20 @@
+{% extends 'base.html'%}
+{% load widget_tweaks %}
+{% block content %}
+<form action="process-data" method="post">
+  {% csrf_token %}
+  <div class="container-fluid text-center">
+    <br><br><br>
+    {% render_field form.customer_name class="render_field" %}
+    {% render_field form.year class="render_field" %}
+    {% render_field form.quarter class="render_field"%}
+    <br><br>
+    <br><br>
+    <p class="data"> {{ message }} {{ file_path }}</p>
+    <br><br>
+    <br><br>
+    <button type="submit" class="btn btn-primary">Process Data</button>
+  </div>
+  </form>
+
+{% endblock %}
