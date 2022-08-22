@@ -1,0 +1,12 @@
+{% extends 'air/base.html'%}
+{% block content %}
+<br><br><br><br>
+  <div id="container" class="container-fluid text-center">
+      <span class="render_field">{{ customer_name }} - {{ quarter}} - {{ year}}</span>
+      <br><br><br>
+        <h3>Select raw data file for CPR</h3>
+        <br><br><br>
+        <input type="hidden" name="encode_jwt" value="{{ encode_jwt }}" id="encode_jwt"/>
+        <button class="btn btn-primary" onclick="launchOneSchema(document.getElementById('encode_jwt').value)">Raw Data File</button>
+  </div>
+{% endblock %}

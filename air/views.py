@@ -1,20 +1,17 @@
-from django.http import HttpResponseRedirect
+from http.client import HTTPResponse
 from django.shortcuts import render
-from django.urls import reverse
 from django.views.generic import TemplateView, View
-from matplotlib.pyplot import axis
-from pyparsing import col
+
 from .forms import *
 from .models import *
 
 from pathlib import Path, PureWindowsPath
-from django.db import connection
+from CPR.settings.dev import OSC_CLIENT_ID, OSC_CLIENT_SECRET
 import os
 import json
 import pandas as pd
 import datetime
 import jwt
-
 
 # Create your views here.
 class BasicView(View):
@@ -235,9 +232,9 @@ class HomeView(TemplateView):
 class RawDataView(BasicView):
     form_class = RawdataForm
     template_name = 'air/raw_data.html'
-    success_url = 'air/load_raw_data.html'
+    success_url = 'air/get_raw_data.html'
     error_url = 'air/error.html'
-
+    
     def get(self, request, *args, **kwargs):
         form = self.form_class
         return render(request, self.template_name, {'form': form})
@@ -245,54 +242,34 @@ class RawDataView(BasicView):
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
         customer_name = request.POST.get('customer_name')
-        request.session['customer_name'] = customer_name
-        travel_agency = request.POST.get('travel_agency')
-        request.session['travel_agency'] = travel_agency
         quarter = request.POST.get('quarter')
-        request.session['quarter'] = quarter
         year = request.POST.get('year')
-        request.session['year'] = year
         country = request.POST.get('country')
-        request.session['country'] = country
-
         if form.is_valid():
-            # win_etl_file_path = self.base_path()
-            # win_etl_output_file_path = Path(os.path.join(win_etl_file_path, request.POST.get("customer_name")))
-            # reports_path = Path(os.path.join(win_etl_output_file_path, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
-            # path = PureWindowsPath(reports_path)
-            # file_path = ''
-            # for file_name in os.listdir(path):
-            #     if not file_name.startswith(customer_name):
-            #         pass
-            #     elif file_name.startswith(customer_name) and file_name.__contains__("Air") and file_name.__contains__(quarter) and file_name.__contains__(year) and file_name.__contains__(country) and file_name.__contains__(".xlsx"):
-            #         file_path = os.path.join(path, file_name)
-            #         csv_file = customer_name + "_Air_" + quarter + year + "_" + country + ".csv"
-            #         csv_file_path = os.path.join(path, csv_file)
-            #         request.session['csv_file_path'] = csv_file_path
-            # try:
-            #     message = ""
-            #     if os.path.exists(file_path):
-            #         message = "Found the file. Process the data..."
-            #         xl = pd.ExcelFile(file_path)
-            #         for sheet in xl.sheet_names:
-            #             df = pd.read_excel(xl, sheet_name=sheet)
-            #             df.to_csv(csv_file_path, encoding='utf8', index=False)
-            # except FileNotFoundError:
-            #     message = "File not found. Please check the path and Try again."
-            #     context = {'message': message}
-            #     return render(request, self.error_url, context)
-            # context = {'customer_name': customer_name, 'quarter': quarter, 'year': year, 'file_path': file_path, 'message': message}
-            context = {'customer_name': customer_name, 'quarter': quarter, 'year': year}
+            payload = {'iss': OSC_CLIENT_ID,'exp': datetime.datetime.now() + datetime.timedelta(minutes=15),'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country}
+            encode_jwt = jwt.encode(payload, OSC_CLIENT_SECRET, algorithm='HS256')
+            context = { 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'encode_jwt': encode_jwt }
             return render(request, self.success_url, context)
         else:
             form = self.form_class(request.POST)
         return render(request, self.template_name, {'form': form})
 
-class LoadRawDataView(TemplateView):
-    template_name = 'air/success.html'
+class LoadRawDataView(BasicView):
+    template_name = 'air/load_raw_data.html'
+    
     def get(self, request, *args, **kwargs):
-        return HttpResponseRedirect(reverse('success', args=request))
-
+        print("in load_raw_data")
+        pay_load = request.GET.get("payload")
+        print(pay_load)
+        return render(request, self.template_name, {'payload': pay_load})
+    
+    
+    def post(self, request, *args, **kwargs):
+        print("in load_raw_data")
+        pay_load = request.POST.get("payload")
+        print(pay_load)
+        return render(request, self.template_name, {'payload': pay_load})        
+        
 class ProcessDataView(BasicView):
     template_name = 'air/process_data.html'
     error_url = 'air/error.html'

@@ -37,21 +37,26 @@ function bootnavbar(options) {
 
   init();
 }
-const importer = oneschemaImporter({
+
+const iFrame_details = {
   clientId: "3a21d9c1-bd7a-4ff1-9ccf-0700e40a57f8",
   templateKey: "air",
   webhookKey: "air_webhook",
-  userJwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiPFVTRVJfSUQ-IiwiaXNzIjoiM2EyMWQ5YzEtYmQ3YS00ZmYxLTljY2YtMDcwMGU0MGE1N2Y4In0.tYD3_KuWqoc7DNtkpWyqtp9CUeTmTpwp3HbphVye-BE",
+  userJwt: "",
   config: {
     blockImportIfErrors: true,
   },
-})
+};
 
-function launchOneSchema() {
+let importer;
+
+function launchOneSchema(token) {
+  iFrame_details.userJwt = token;
+  importer = oneschemaImporter(iFrame_details);
   importer.launch()
 
   importer.on("success", (data) => {
-    // TODO: handle success
+
   })
 
   importer.on("cancel", () => {
@@ -63,3 +68,16 @@ function launchOneSchema() {
   })
 }
 
+// var content = document.getElementById("container");
+// content.style.display="none";
+// setTimeout(function(){
+//     content.style.display="block";
+// }, 50000);
+
+// const spinner = document.getElementById("spinner");
+
+// $.ajax({
+//   type: "GET",
+//   url: "{% url 'load_raw_data' %}",
+//   success: function()
+// })

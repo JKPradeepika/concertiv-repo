@@ -3,7 +3,9 @@ from decouple import config
 
 SECRET_KEY = 'django-insecure-cjog9l9qggjf*4at5xa5)h&n@aq_8!txjd*&+8knt7#4ec7$+4'
 
-CLIENT_SECRET='N7nXOGHQf8MrKaC0qthpxYa04vXikQMw7OrHfhyMS7Q='
+OSC_CLIENT_SECRET = 'xrhVmrn0CUb7fNv8tZKoCV/5h+Kf/AH85hPZZDMopMo='
+
+OSC_CLIENT_ID = "3a21d9c1-bd7a-4ff1-9ccf-0700e40a57f8"
 
 DEBUG = True
 

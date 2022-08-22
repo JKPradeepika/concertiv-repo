@@ -1,13 +1,11 @@
 {% extends 'air/base.html'%}
 {% block content %}
 <br><br><br><br>
-<form action=""
   <div class="container-fluid text-center">
-    {% csrf_token %}
-    <span class="render_field">{{ customer_name }} - {{ quarter}} - {{ year}}</span>
-    <br><br><br>
-      <h3>Select raw data file for CPR</h3>
+      <span class="render_field">{{ customer_name }} - {{ quarter}} - {{ year}}</span>
       <br><br><br>
-      <button class="btn btn-primary" onclick="launchOneSchema()">Raw Data File</button>
+      {{ payload }}
+      <div id="spinner" class="spinner-border" role="status" >
+      </div>
   </div>
 {% endblock %}
