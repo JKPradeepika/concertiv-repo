@@ -18,5 +18,9 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+<<<<<<< HEAD
     path('CPR-dev/', include('air.urls')),
+=======
+    path('', include('air.urls')),
+>>>>>>> master
 ]

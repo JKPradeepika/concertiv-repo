@@ -14,9 +14,11 @@
   padding-top: 10px;
   padding-bottom: 10px;
 }
+
 .not_visible{
   display: none;
 }
+
 h3, h6{
   text-align: center;
   color: #154360;

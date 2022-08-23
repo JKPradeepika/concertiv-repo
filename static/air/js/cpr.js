@@ -56,7 +56,6 @@ function launchOneSchema(token) {
   importer.launch()
 
   importer.on("success", (data) => {
-
   })
 
   importer.on("cancel", () => {
@@ -68,16 +67,3 @@ function launchOneSchema(token) {
   })
 }
 
-// var content = document.getElementById("container");
-// content.style.display="none";
-// setTimeout(function(){
-//     content.style.display="block";
-// }, 50000);
-
-// const spinner = document.getElementById("spinner");
-
-// $.ajax({
-//   type: "GET",
-//   url: "{% url 'load_raw_data' %}",
-//   success: function()
-// })
