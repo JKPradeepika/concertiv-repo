@@ -1,0 +1,11 @@
+{% extends 'air/base.html'%}
+{% block content %}
+<br><br><br><br>
+  <div class="container-fluid text-center">
+      <span class="render_field">{{ customer_name }} - {{ quarter}} - {{ year}}</span>
+      <br><br><br>
+      {{ payload }}
+      <div id="spinner" class="spinner-border" role="status" >
+      </div>
+  </div>
+{% endblock %}

@@ -37,21 +37,25 @@ function bootnavbar(options) {
 
   init();
 }
-const importer = oneschemaImporter({
+
+const iFrame_details = {
   clientId: "3a21d9c1-bd7a-4ff1-9ccf-0700e40a57f8",
   templateKey: "air",
   webhookKey: "air_webhook",
-  userJwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiPFVTRVJfSUQ-IiwidXNlcl9uYW1lIjoicHJhZGVlcGlrYSIsInVzZXJfZW1haWwiOiJwcmFkZWVwaWthLmp1bmFwdWRpQHZlYXJjLmNvbSIsImlzcyI6IjNhMjFkOWMxLWJkN2EtNGZmMS05Y2NmLTA3MDBlNDBhNTdmOCJ9.khSa4_f_ktbUrXXo9EVxLoyaNrVxx_jUF27HQw0E6v4",
+  userJwt: "",
   config: {
     blockImportIfErrors: true,
   },
-})
+};
 
-function launchOneSchema() {
+let importer;
+
+function launchOneSchema(token) {
+  iFrame_details.userJwt = token;
+  importer = oneschemaImporter(iFrame_details);
   importer.launch()
 
   importer.on("success", (data) => {
-    // TODO: handle success
   })
 
   importer.on("cancel", () => {
@@ -63,14 +67,3 @@ function launchOneSchema() {
   })
 }
 
-var content = document.getElementById("container");
-content.style.display="none";
-setTimeout(function(){
-    content.style.display="block";
-}, 500);
-
-var spinner = document.getElementById("spinner");
-spinner.style.display="block";
-setTimeout(function(){
-    spinner.style.display="none";
-}, 500);
