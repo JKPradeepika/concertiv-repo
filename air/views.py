@@ -1,6 +1,10 @@
+import base64
+import csv
+import errno
 from http.client import HTTPResponse
-from django.shortcuts import render
-from django.views.generic import TemplateView, View
+from urllib.request import HTTPRedirectHandler
+from django.shortcuts import render, redirect
+from django.views.generic import TemplateView, RedirectView, View
 
 from .forms import *
 from .models import *
@@ -227,13 +231,12 @@ class BasicView(View):
         return airline_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings
 
 class HomeView(TemplateView):
-    template_name = 'air/home.html'
+    template_name = 'commons/home.html'
 
 class RawDataView(BasicView):
     form_class = RawdataForm
     template_name = 'air/raw_data.html'
     success_url = 'air/get_raw_data.html'
-    error_url = 'air/error.html'
     
     def get(self, request, *args, **kwargs):
         form = self.form_class
@@ -242,46 +245,98 @@ class RawDataView(BasicView):
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
         customer_name = request.POST.get('customer_name')
+        travel_agency = request.POST.get('travel_agency')
         quarter = request.POST.get('quarter')
         year = request.POST.get('year')
         country = request.POST.get('country')
-        if form.is_valid():
-            payload = {'iss': OSC_CLIENT_ID,'exp': datetime.datetime.now() + datetime.timedelta(minutes=15),'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country}
-            encode_jwt = jwt.encode(payload, OSC_CLIENT_SECRET, algorithm='HS256')
-            context = { 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'encode_jwt': encode_jwt }
-            return render(request, self.success_url, context)
-        else:
-            form = self.form_class(request.POST)
+        try:
+            if form.is_valid():
+                data = {
+                    'iss': OSC_CLIENT_ID,
+                    'exp': datetime.datetime.now() + datetime.timedelta(minutes=15),
+                    'username': os.getlogin(),
+                    'customer_name': customer_name, 
+                    'quarter': quarter, 
+                    'year': year,
+                    'travel_agency': travel_agency,
+                    'country': country
+                }
+                encode_jwt = jwt.encode(payload = data, key=OSC_CLIENT_SECRET, algorithm='HS256')
+                context = { 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'travel_agency': travel_agency, 'encode_jwt': encode_jwt }
+                return render(request, self.success_url, context)
+            else:
+                form = self.form_class(request.POST)
+        except IOError as e:
+            if e.errno == errno.EPIPE:
+                pass
         return render(request, self.template_name, {'form': form})
 
 class LoadRawDataView(BasicView):
     template_name = 'air/load_raw_data.html'
-    
-    def get(self, request, *args, **kwargs):
-        print("in load_raw_data")
-        pay_load = request.GET.get("payload")
-        print(pay_load)
-        return render(request, self.template_name, {'payload': pay_load})
-    
-    
-    def post(self, request, *args, **kwargs):
-        print("in load_raw_data")
-        pay_load = request.POST.get("payload")
-        print(pay_load)
-        return render(request, self.template_name, {'payload': pay_load})        
         
+    def post(self, request, *args, **kwargs):
+        osc_jwt_token = request.headers['Authorization']
+        decode_jwt = jwt.decode(osc_jwt_token, OSC_CLIENT_SECRET, algorithms="HS256")
+        if decode_jwt.get('iss') == OSC_CLIENT_ID:
+            customer_name = decode_jwt.get('customer_name')
+            quarter = decode_jwt.get('quarter')
+            year = decode_jwt.get('year')
+            country = decode_jwt.get('country')
+            travel_agency = decode_jwt.get('travel_agency')
+            payload = json.loads(request.body.decode('utf-8'))
+            column_headers, template_key_headers = [], []
+            for col in payload.get('columns'):
+                for k, v in col.items():
+                    if k == "template_column_name":
+                        column_headers.append(v)
+                    elif k == "template_column_key":
+                        template_key_headers.append(v)
+            final_rec, rows = [], [] 
+            for rec in payload.get('records'):
+                reordered_dict = {k: rec[k] for k in template_key_headers}
+                rows = list(reordered_dict.values())
+                final_rec.append(rows)
+            win_etl_file_path = self.base_path()
+            win_etl_output_file_path = Path(os.path.join(win_etl_file_path, customer_name))
+            payload_path = Path(os.path.join(win_etl_output_file_path, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
+            final_payload_path = PureWindowsPath(payload_path)
+            csv_file_name = customer_name + "_Air_" + year + quarter + "_" + country + ".csv"
+            csv_file_path = Path(os.path.join(final_payload_path, csv_file_name))
+            with open(csv_file_path, 'w', newline='') as csv_file:
+                csv_writer = csv.writer(csv_file)
+                csv_writer.writerow(column_headers)
+                csv_writer.writerows(final_rec)
+            context = {'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'travel_agency': travel_agency, 'csv_file_path': csv_file_path}
+        return render(request, self.template_name, context)   
+        
+
+# class ProcessDataView(BasicView):
+#     template_name = 'air/final_rec.html'
+    
+#     def post(self, request, *args, **kwargs):
+#         csv_file_path = request.POST.get('csv_file_path')
+#         customer_name = request.POST.get('customer_name')
+#         country = request.POST.get('country')
+#         year = request.POST.get('year')
+#         quarter = request.POST.get('quarter')
+        
+#         if os.path.exists(csv_file_path):
+#             df = pd.read_csv(csv_file_path)
+            
+#         context = {'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'csv_file_path': csv_file_path}
+#         return render(request, self.template_name, context)
+
 class ProcessDataView(BasicView):
-    template_name = 'air/process_data.html'
-    error_url = 'air/error.html'
+    template_name = 'air/final_rec.html'
+    error_url = 'commons/error.html'
 
     def post(self, request, *args, **kwargs):
-        cwd = os.getcwd()
-        csv_file_path = request.session['csv_file_path']
-        customer_name = request.session['customer_name']
-        year = request.session['year']
-        quarter = request.session['quarter']
-        travel_agency = request.session['travel_agency']
-        country = request.session['country']
+        csv_file_path = request.POST.get('csv_file_path')
+        customer_name = request.POST.get('customer_name')
+        travel_agency = request.POST.get('travel_agency')
+        country = request.POST.get('country')
+        year = request.POST.get('year')
+        quarter = request.POST.get('quarter')
 
         # Reading CSV file
         try:
@@ -289,50 +344,29 @@ class ProcessDataView(BasicView):
             if os.path.exists(csv_file_path):
                 df = pd.read_csv(csv_file_path)
 
-                # Loading JSON file for column names mappings
-                config_json_file_path = Path(os.path.join(cwd, "config.json"))
-                with open(config_json_file_path) as f:
-                    data = json.load(f)
-                    mappings = data[customer_name]
-                
-                del_rows = []
-                
-                # Renaming columns with concertiv id's
-                headers = []
-                for k, v in mappings.items():
-                    headers.append(v)
-                df.columns = headers
-                
-                df_headers = list(df.columns.values)
-                for i in df_headers:
-                    if i == '':
-                        df.drop(['{0}'.format(i)], axis=1)
-                
-                df.drop(df[(df["Carrier Code"] == "2V") | (df["Carrier Code"] == "9F")].index, inplace=True)
-                df.drop(df[(df["Origin Airport Code"] == "XXX") | (df["Origin Airport Code"] == "YYY") | (df["Origin Airport Code"] == "ZZZ")].index, inplace =True)
-                
                 # Get data from database tables
                 prefered_qs = Preference.objects.filter(customer_name = customer_name).values_list('prefered_airline')
                 prefered_airline_data = list(prefered_qs.values())
+                
+                alliance_qs = Alliance.objects.all()
+                alliance_data = list(alliance_qs.values())
                 
                 airport_qs = Airport.objects.all()
                 airport_data = list(airport_qs.values())
 
                 airline_qs = Airline.objects.all()
                 airline_data = list(airline_qs.values())
-
-                alliance_qs = Alliance.objects.all()
-                alliance_data = list(alliance_qs.values())
-
+                
                 # Converting airport and carrier codes in dataframe to list
                 airport_ori_code = df["Origin Airport Code"].tolist()
                 airport_dest_code = df["Destination Airport Code"].tolist()
                 carrier_code = df["Carrier Code"].tolist()
+                
                 # Setting rows display
                 pd.set_option('display.max_rows', 1500)
 
                 # Forming dataframe for final data
-                df['Departure Date'] = pd.to_datetime(df['Departure Date'], dayfirst=True)
+                df['Departure Date'] = pd.to_datetime(df['Departure Date'], infer_datetime_format=True)
                 df.insert(0, "Travel Date Quarter", 'Q' + df['Departure Date'].dt.quarter.astype(str) + " " + df['Departure Date'].dt.year.astype(str), True)
                 df.insert(1, "Travel Date Half Year", 'H' + df['Departure Date'].dt.month.gt(6).add(1).astype(str) + " " + df['Departure Date'].dt.year.astype(str), True)
                 df.insert(2, "Receive Quarter", quarter + " " + year, True)
@@ -341,24 +375,25 @@ class ProcessDataView(BasicView):
                 df.insert(5, "Client", customer_name, True)
                 df.insert(6, "Agency", travel_agency, True)
                 df.insert(7, "Country", country, True)
+                df["Traveler Name"] = df["Traveler Name"]
                 df["Carrier Name"] = [i["carrier_name"] for i in airline_data for cc in carrier_code for k, v in i.items() if cc == v]
                 df["Origin City"] = [i["airport_city"] for oc in airport_ori_code for i in airport_data for k, v in i.items() if oc == v]
                 df["Origin Country"] = ""
                 df["Destination City"] = [i["airport_city"] for dc in airport_dest_code for i in airport_data for k, v in i.items() if dc == v]
                 df["Destination Country"] = ""
                 df["International vs. Domestic"] = ""
-                df["Refund"] = ""
-                df["Exchange"] = ""
                 df["Refund / Exchange"] = ""
+                df["PNR Locator"] = df["PNR"]
+                df["Leg Counter"] = df["Leg Counter"]
+                df["Miles / Mileage"] = df["Segment Miles"]
                 df["CTV_Booking Class Code"] = df["Class of Service Code"]
                 df["CTV_Origin_Airport_Id"] = [i["airport_id"] for oc in airport_ori_code for i in airport_data for k, v in i.items() if oc == v]
                 df["CTV_Destination_Airport_Id"] = [i["airport_id"] for dc in airport_dest_code for i in airport_data for k, v in i.items() if dc == v]
                 df["CTV_Reference"] = df["Origin Airport Code"] + "-" + df["Destination Airport Code"] + "-" + df["Class of Service Code"]
                 df["CTV_Fare"] = df["Class of Service"]
                 df["CTV_Carrier_Id"] = [i["carrier_id"] for cc in carrier_code for i in airline_data for k, v in i.items() if cc == v]
-                df["CTV_Alliance_ID"] = [i["carrier_alliance_code_id"] for cc in carrier_code for i in airline_data for k, v in i.items() if cc == v]
+                df["CTV_Alliance_ID"] = [i["carrier_alliance_id"] for cc in carrier_code for i in airline_data for k, v in i.items() if cc == v]
                 alliance_data_list = df["CTV_Alliance_ID"].tolist()
-                df["Errors"] = ""
                 df["Savings Alliance Classification"] = [i["alliance_name"] for adl in alliance_data_list for i in alliance_data for k, v in i.items() if adl == v]
 
                 # Determine savings classifier based on departure data for Prism airlines
@@ -462,16 +497,16 @@ class ProcessDataView(BasicView):
                     if savings_alliance_classifier[ali] in data["group_deals"]:
                         non_prism[ali] = "N"
                 df["Non-Prism Preferred"] = [np for np in non_prism]
+                
 
                 # Rearranging the columns
                 headers = ["Travel Date Quarter", "Travel Date Half Year", "Receive Quarter", "Receive Half Year", "PoS", "Client", "Agency", 
-                        "Country", "Traveller Name", "Booked Date / Invoice Date", "Departure Date",
+                        "Country", "Traveler Name", "Booked Date / Invoice Date", "Departure Date",
                         "Carrier Code", "Carrier Name", "Class of Service Code", "Class of Service", "Fare Basis Code",
                         "Origin Airport Code", "Origin City", "Origin Country", "Destination Airport Code", "Destination City",
-                        "Destination Country", "Itinerary / Routing", "Tour Code", "Ticket Designator", "Point of Sale", "Fare", "Tax", "Refund",
-                        "Exchange", "Refund / Exchange", "Booking Source", "Leg Counter", "Miles / Mileage",
+                        "Destination Country", "Itinerary / Routing", "Tour Code", "Ticket Designator", "Fare", "Tax", "Refund / Exchange", "Booking Source", "Leg Counter", "Miles / Mileage",
                         "International vs. Domestic", "PNR Locator", "CTV_Booking Class Code", "CTV_Origin_Airport_Id", "CTV_Destination_Airport_Id",
-                        "CTV_Reference", "CTV_Fare", "CTV_Carrier_Id", "CTV_Alliance_ID", "Errors", "Savings Alliance Classification",
+                        "CTV_Reference", "CTV_Fare", "CTV_Carrier_Id", "CTV_Alliance_ID", "Savings Alliance Classification",
                         "Savings Contract Classifier", "Discount", "Pre-Discount Cost", "Savings", "Non-Prism Preferred",
                         "Contract Classifier Tour Code", "Contract Classifier Ticket Designator", "If Discount Applied", "If Reference Missing"]
 
@@ -589,17 +624,17 @@ class ProcessDataView(BasicView):
                 file_name = Path(os.path.join(new_file_path, new_file_name))
                 df.to_excel(file_name, encoding='utf8', index=False)
                 
-                os.chdir(cwd)
-                context = {'table': table, 'customer_name': customer_name, 'quarter': quarter, 'year': year}
+                # os.chdir(cwd)
+                context = {'table': table, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'final_sheet': file_name}
                 return render(request, self.template_name, context=context)
         except FileNotFoundError:
             message = ("Unable to find CSV file in specified directory: %s" % csv_file_path)
             context = {'message': message}
             return render(request, self.error_url, context)
         finally:
-                # Deleting previous version of CSV - raw9* data file
+                # Deleting previous version of CSV - raw data file
                 os.chdir(new_file_path)
-                pre_csv_file = customer_name + "_Air_" + quarter + year + "_" + country + ".csv"
+                pre_csv_file = customer_name + "_Air_" + year + quarter + "_" + country + ".csv"
                 if os.path.exists(pre_csv_file):
                     os.remove(pre_csv_file)
 
@@ -609,9 +644,9 @@ class ProcessDataView(BasicView):
                     os.remove(csv_file_path)
 
                 # Deleting CSV file - Air Prism & Other files
-                # air_prism_file = Path(os.path.join(new_file_path, "Air PRISM & Other.csv"))
-                # if os.path.exists(air_prism_file):
-                #     os.remove(air_prism_file)          
+                air_prism_file = Path(os.path.join(new_file_path, "Air PRISM & Other.csv"))
+                if os.path.exists(air_prism_file):
+                    os.remove(air_prism_file)          
             
     
 class GraphsView(TemplateView):

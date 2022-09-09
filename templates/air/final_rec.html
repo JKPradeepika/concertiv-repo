@@ -1,0 +1,14 @@
+{% extends 'commons/base.html'%}
+{% block content %}
+<br><br><br><br>
+  <div id="processing" class="container-fluid text-center">
+      <span class="render_field">{{ customer_name }} - {{ country }} - {{ year }} - {{ quarter }}</span>
+      <br><br><br>
+      Processing the data ... <br><br><br>
+      <div id="spinner" class="spinner-border" role="status"></div>
+  </div>
+  <div id="container" class="container-fluid text-center">
+    Process completed successfully. <br>
+    Please find the file at {{ final_sheet }}
+  </div>
+{% endblock %}

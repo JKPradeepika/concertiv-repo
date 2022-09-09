@@ -21,7 +21,7 @@ class Airline(models.Model):
     carrier_code = models.CharField(max_length=4, primary_key=True)
     carrier_id = models.IntegerField()
     carrier_name = models.CharField(max_length=100)
-    carrier_alliance_code = models.ForeignKey("Alliance", on_delete=models.CASCADE)
+    carrier_alliance = models.ForeignKey("Alliance", on_delete=models.CASCADE)
 
     def __str__(self):
         return self.carrier_name

@@ -1,11 +1,18 @@
-{% extends 'air/base.html'%}
+{% extends 'commons/base.html'%}
 {% block content %}
 <br><br><br><br>
+<form method="post" action="process_data" id="process_data" name="process_data">
+{% csrf_token %}
   <div class="container-fluid text-center">
-      <span class="render_field">{{ customer_name }} - {{ quarter}} - {{ year}}</span>
+      <span class="render_field">{{ customer_name }} - {{ country }} - {{ year }} - {{ quarter }}</span>
       <br><br><br>
-      {{ payload }}
-      <div id="spinner" class="spinner-border" role="status" >
-      </div>
+      Converting JSON Payload into .CSV file format ... <br><br><br>
+      <input type="hidden" name="csv_file_path" value="{{ csv_file_path }}" id="csv_file_path"/>
+      <input type="hidden" name="customer_name" value="{{ customer_name }}" id="customer_name"/>
+      <input type="hidden" name="country" value="{{ country }}" id="country"/>
+      <input type="hidden" name="year" value="{{ year }}" id="year"/>
+      <input type="hidden" name="quarter" value="{{ quarter }}" id="quarter"/>
+      <div id="spinner" class="spinner-border" role="status"></div>
   </div>
+</form>
 {% endblock %}
