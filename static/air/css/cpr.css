@@ -18,7 +18,10 @@
 .not_visible{
   display: none;
 }
-
+.signin{
+  text-decoration: none;
+  color: #fff;
+}
 h3, h6{
   text-align: center;
   color: #154360;
@@ -35,6 +38,11 @@ h3, h6{
   color: white;
   font-weight: bold;
 }
+button.btn.btn.btn-primary.dropdown-toggle{
+  background-color: #154360;
+  border: 2px solid #154360;
+  color: white;
+}
 ul.dropdown-menu.dropdown-item > li:a{
   color: #154360; 
   border: 2px solid #154360;
@@ -42,9 +50,9 @@ ul.dropdown-menu.dropdown-item > li:a{
   font-weight: bold;
 }
 ul.dropdown-menu.dropdown-item > li:hover{
-  background-color: #154360;
+  background-color: #fff;
   border: 2px solid #154360;
-  color: white;
+  color: #154360;
   font-weight: bold;
 }
 .render_field{

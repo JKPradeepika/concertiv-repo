@@ -1,7 +1,7 @@
 {
     "win_etl_output_files_path": "Dropbox (Concertiv)/Ve Arc Sharing/1. Customers",
-    "jet_departure_date": "2019-05-01",
-    "sin_departure_date": "2019-07-31",
+    "jet_departure_date": "05/01/2019",
+    "sin_departure_date": "07/31/2019",
     "group_deals": ["JetBlue", "Qantas", "Turkish", "Singapore", "Emirates", "Cathay"],
     "tour_code_and_ticket_designator": {
         "JetBlue": {"jet_tour_code": "CC1103", "jet_ticket_designator": "CPO2"},

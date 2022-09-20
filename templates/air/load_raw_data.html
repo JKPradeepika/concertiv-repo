@@ -1,18 +1,19 @@
 {% extends 'commons/base.html'%}
 {% block content %}
-<br><br><br><br>
-<form method="post" action="process_data" id="process_data" name="process_data">
-{% csrf_token %}
-  <div class="container-fluid text-center">
-      <span class="render_field">{{ customer_name }} - {{ country }} - {{ year }} - {{ quarter }}</span>
-      <br><br><br>
-      Converting JSON Payload into .CSV file format ... <br><br><br>
-      <input type="hidden" name="csv_file_path" value="{{ csv_file_path }}" id="csv_file_path"/>
-      <input type="hidden" name="customer_name" value="{{ customer_name }}" id="customer_name"/>
-      <input type="hidden" name="country" value="{{ country }}" id="country"/>
-      <input type="hidden" name="year" value="{{ year }}" id="year"/>
-      <input type="hidden" name="quarter" value="{{ quarter }}" id="quarter"/>
-      <div id="spinner" class="spinner-border" role="status"></div>
-  </div>
-</form>
+<br><br>
+<div class="container-fluid text-center">
+  <span class="render_field">{{ customer_name }} - {{ country }} - {{ year }} - {{ quarter }}</span>
+    <br><br><br>
+    <div id="form_content">
+      File is ready to process...<br><br>
+      <form method="post" action="process_data" name="process_data">
+        {% csrf_token %}
+          <input type="hidden" name="csv_file_path" value="{{ csv_file_path }}" id="csv_file_path"/>
+          <input type="hidden" name="customer_name" value="{{ customer_name }}" id="customer_name"/>
+          <input type="hidden" name="country" value="{{ country }}" id="country"/>
+          <input type="hidden" name="year" value="{{ year }}" id="year"/>
+          <input type="hidden" name="quarter" value="{{ quarter }}" id="quarter"/>
+          <button type="submit" class="btn btn-primary">Process Data</button>
+    </form>
+</div>
 {% endblock %}

@@ -1,21 +1,22 @@
-import base64
-import csv
-import errno
-from http.client import HTTPResponse
-from urllib.request import HTTPRedirectHandler
 from django.shortcuts import render, redirect
-from django.views.generic import TemplateView, RedirectView, View
+from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth import authenticate, login, logout
+from django.views.generic import TemplateView, View
 
 from .forms import *
 from .models import *
+from django.contrib.auth.models import User
+
+from CPR.settings.dev import OSC_CLIENT_ID, OSC_CLIENT_SECRET
 
 from pathlib import Path, PureWindowsPath
-from CPR.settings.dev import OSC_CLIENT_ID, OSC_CLIENT_SECRET
 import os
 import json
 import pandas as pd
 import datetime
 import jwt
+import csv
+import errno
 
 # Create your views here.
 class BasicView(View):
@@ -230,408 +231,445 @@ class BasicView(View):
         airline_list.append(savings)
         return airline_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings
 
+class AdminLogin(LoginView):
+    form_class = AdminLoginForm
+    template_name = 'users/admin_login.html'
+    success_url = 'commons/home.html'
+    
+    def get(self, request, *args, **kwargs):
+        form = self.form_class
+        return render(request, self.template_name, context={'form': form})
+    
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        username = str(User.objects.get(username=username))
+        user = authenticate(username=username, password=password)
+        if not user:
+            message = "Invalid login credentials. Please try again."
+        if user is not None:
+            login(request, user)
+            request.session.create()
+            request.session['username'] = username
+            request.session.set_expiry(900)
+            request.session.save()
+            return render(request, self.success_url, context={'username': username})
+        return render(request, self.template_name, context={'form': form, 'message': message})
+    
+class AdminLogout(LogoutView):
+    template_name = "commons/home.html"
+    
+    def post(self, request, *args, **kwargs):
+        logout(request)
+        return render(request, self.template_name)
+            
 class HomeView(TemplateView):
     template_name = 'commons/home.html'
+    
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)
 
 class RawDataView(BasicView):
     form_class = RawdataForm
     template_name = 'air/raw_data.html'
     success_url = 'air/get_raw_data.html'
+    error_url = 'commons/error.html'
     
     def get(self, request, *args, **kwargs):
-        form = self.form_class
-        return render(request, self.template_name, {'form': form})
+        if request.session.has_key('username'):
+            username = request.session.get('username')
+            form = self.form_class
+            return render(request, self.template_name, {'form': form, 'username': username})
+        else:
+            message = "Unauthorized access. Please login again."
+            return render(request, self.error_url, context={'message': message})
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
-        customer_name = request.POST.get('customer_name')
-        travel_agency = request.POST.get('travel_agency')
-        quarter = request.POST.get('quarter')
-        year = request.POST.get('year')
-        country = request.POST.get('country')
-        try:
-            if form.is_valid():
-                data = {
-                    'iss': OSC_CLIENT_ID,
-                    'exp': datetime.datetime.now() + datetime.timedelta(minutes=15),
-                    'username': os.getlogin(),
-                    'customer_name': customer_name, 
-                    'quarter': quarter, 
-                    'year': year,
-                    'travel_agency': travel_agency,
-                    'country': country
-                }
-                encode_jwt = jwt.encode(payload = data, key=OSC_CLIENT_SECRET, algorithm='HS256')
-                context = { 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'travel_agency': travel_agency, 'encode_jwt': encode_jwt }
-                return render(request, self.success_url, context)
-            else:
-                form = self.form_class(request.POST)
-        except IOError as e:
-            if e.errno == errno.EPIPE:
-                pass
-        return render(request, self.template_name, {'form': form})
+        if request.session.has_key('username'):
+            username = request.session.get('username')
+            try:
+                if form.is_valid():
+                    customer_name = request.POST.get('customer_name')
+                    travel_agency = request.POST.get('travel_agency')
+                    quarter = request.POST.get('quarter')
+                    year = request.POST.get('year')
+                    country = request.POST.get('country')
+                    data = {
+                        'iss': OSC_CLIENT_ID,
+                        'exp': datetime.datetime.now() + datetime.timedelta(minutes=15),
+                        'username': username,
+                        'customer_name': customer_name, 
+                        'quarter': quarter, 
+                        'year': year,
+                        'travel_agency': travel_agency,
+                        'country': country
+                    }
+                    encode_jwt = jwt.encode(payload = data, key=OSC_CLIENT_SECRET, algorithm='HS256')
+                    context = {'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'travel_agency': travel_agency, 'encode_jwt': encode_jwt }
+                    return render(request, self.success_url, context)
+                else:
+                    form = self.form_class(request.POST)
+            except IOError as e:
+                if e.errno == errno.EPIPE:
+                    pass
+        else:
+            message = "Unauthorized access. Please login again."
+            return render(request, self.error_url, context={'message': message})
+        return render(request, self.template_name, {'form': form, 'username': username})
 
 class LoadRawDataView(BasicView):
     template_name = 'air/load_raw_data.html'
+    error_url = 'commons/error.html'
         
     def post(self, request, *args, **kwargs):
-        osc_jwt_token = request.headers['Authorization']
-        decode_jwt = jwt.decode(osc_jwt_token, OSC_CLIENT_SECRET, algorithms="HS256")
-        if decode_jwt.get('iss') == OSC_CLIENT_ID:
-            customer_name = decode_jwt.get('customer_name')
-            quarter = decode_jwt.get('quarter')
-            year = decode_jwt.get('year')
-            country = decode_jwt.get('country')
-            travel_agency = decode_jwt.get('travel_agency')
-            payload = json.loads(request.body.decode('utf-8'))
-            column_headers, template_key_headers = [], []
-            for col in payload.get('columns'):
-                for k, v in col.items():
-                    if k == "template_column_name":
-                        column_headers.append(v)
-                    elif k == "template_column_key":
-                        template_key_headers.append(v)
-            final_rec, rows = [], [] 
-            for rec in payload.get('records'):
-                reordered_dict = {k: rec[k] for k in template_key_headers}
-                rows = list(reordered_dict.values())
-                final_rec.append(rows)
-            win_etl_file_path = self.base_path()
-            win_etl_output_file_path = Path(os.path.join(win_etl_file_path, customer_name))
-            payload_path = Path(os.path.join(win_etl_output_file_path, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
-            final_payload_path = PureWindowsPath(payload_path)
-            csv_file_name = customer_name + "_Air_" + year + quarter + "_" + country + ".csv"
-            csv_file_path = Path(os.path.join(final_payload_path, csv_file_name))
-            with open(csv_file_path, 'w', newline='') as csv_file:
-                csv_writer = csv.writer(csv_file)
-                csv_writer.writerow(column_headers)
-                csv_writer.writerows(final_rec)
-            context = {'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'travel_agency': travel_agency, 'csv_file_path': csv_file_path}
-        return render(request, self.template_name, context)   
-        
+        if request.session.has_key('username'):
+            username = request.session.get('username')
+            osc_jwt_token = request.headers['Authorization']
+            decode_jwt = jwt.decode(osc_jwt_token, OSC_CLIENT_SECRET, algorithms="HS256")
+            if decode_jwt.get('iss') == OSC_CLIENT_ID:
+                customer_name = decode_jwt.get('customer_name')
+                quarter = decode_jwt.get('quarter')
+                year = decode_jwt.get('year')
+                country = decode_jwt.get('country')
+                travel_agency = decode_jwt.get('travel_agency')
+                payload = json.loads(request.body.decode('utf-8'))
+                column_headers, template_key_headers = [], []
+                for col in payload.get('columns'):
+                    for k, v in col.items():
+                        if k == "template_column_name":
+                            column_headers.append(v)
+                        elif k == "template_column_key":
+                            template_key_headers.append(v)
+                final_rec, rows = [], [] 
+                for rec in payload.get('records'):
+                    reordered_dict = {k: rec[k] for k in template_key_headers}
+                    rows = list(reordered_dict.values())
+                    final_rec.append(rows)
+                win_etl_file_path = self.base_path()
+                win_etl_output_file_path = Path(os.path.join(win_etl_file_path, customer_name))
+                payload_path = Path(os.path.join(win_etl_output_file_path, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
+                final_payload_path = PureWindowsPath(payload_path)
+                csv_file_name = customer_name + "_Air_" + year + quarter + "_" + country + ".csv"
+                csv_file_path = Path(os.path.join(final_payload_path, csv_file_name))
+                with open(csv_file_path, 'w', newline='') as csv_file:
+                    csv_writer = csv.writer(csv_file)
+                    csv_writer.writerow(column_headers)
+                    csv_writer.writerows(final_rec)
+                context = {'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'travel_agency': travel_agency, 'csv_file_path': csv_file_path}
+                return render(request, self.template_name, context)   
+        else:
+            message = "Unauthorized access. Please login again."
+            return render(request, self.error_url, context={'message': message})
+        return render(request, self.template_name, {'username': username})
 
-# class ProcessDataView(BasicView):
-#     template_name = 'air/final_rec.html'
-    
-#     def post(self, request, *args, **kwargs):
-#         csv_file_path = request.POST.get('csv_file_path')
-#         customer_name = request.POST.get('customer_name')
-#         country = request.POST.get('country')
-#         year = request.POST.get('year')
-#         quarter = request.POST.get('quarter')
-        
-#         if os.path.exists(csv_file_path):
-#             df = pd.read_csv(csv_file_path)
-            
-#         context = {'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'csv_file_path': csv_file_path}
-#         return render(request, self.template_name, context)
 
 class ProcessDataView(BasicView):
     template_name = 'air/final_rec.html'
     error_url = 'commons/error.html'
 
     def post(self, request, *args, **kwargs):
-        csv_file_path = request.POST.get('csv_file_path')
-        customer_name = request.POST.get('customer_name')
-        travel_agency = request.POST.get('travel_agency')
-        country = request.POST.get('country')
-        year = request.POST.get('year')
-        quarter = request.POST.get('quarter')
-
         # Reading CSV file
-        try:
-            new_file_path = ""
-            if os.path.exists(csv_file_path):
-                df = pd.read_csv(csv_file_path)
+        if request.session.has_key('username'):
+            username = request.session.get('username')
+            try:
+                csv_file_path = request.POST.get('csv_file_path')
+                customer_name = request.POST.get('customer_name')
+                travel_agency = request.POST.get('travel_agency')
+                country = request.POST.get('country')
+                year = request.POST.get('year')
+                quarter = request.POST.get('quarter')
+                new_file_path = ""
+                if os.path.exists(csv_file_path):
+                    df = pd.read_csv(csv_file_path)
 
-                # Get data from database tables
-                prefered_qs = Preference.objects.filter(customer_name = customer_name).values_list('prefered_airline')
-                prefered_airline_data = list(prefered_qs.values())
-                
-                alliance_qs = Alliance.objects.all()
-                alliance_data = list(alliance_qs.values())
-                
-                airport_qs = Airport.objects.all()
-                airport_data = list(airport_qs.values())
+                    # Get data from database tables
+                    prefered_qs = Preference.objects.filter(customer_name = customer_name).values_list('prefered_airline')
+                    prefered_airline_data = list(prefered_qs.values())
+                    
+                    alliance_qs = Alliance.objects.all()
+                    alliance_data = list(alliance_qs.values())
+                    
+                    airport_qs = Airport.objects.all()
+                    airport_data = list(airport_qs.values())
 
-                airline_qs = Airline.objects.all()
-                airline_data = list(airline_qs.values())
-                
-                # Converting airport and carrier codes in dataframe to list
-                airport_ori_code = df["Origin Airport Code"].tolist()
-                airport_dest_code = df["Destination Airport Code"].tolist()
-                carrier_code = df["Carrier Code"].tolist()
-                
-                # Setting rows display
-                pd.set_option('display.max_rows', 1500)
+                    airline_qs = Airline.objects.all()
+                    airline_data = list(airline_qs.values())
+                    
+                    # Converting airport and carrier codes in dataframe to list
+                    airport_ori_code = df["Origin Airport Code"].tolist()
+                    airport_dest_code = df["Destination Airport Code"].tolist()
+                    carrier_code = df["Carrier Code"].tolist()
+                    
+                    # Setting rows display
+                    pd.set_option('display.max_rows', 1500)
 
-                # Forming dataframe for final data
-                df['Departure Date'] = pd.to_datetime(df['Departure Date'], infer_datetime_format=True)
-                df.insert(0, "Travel Date Quarter", 'Q' + df['Departure Date'].dt.quarter.astype(str) + " " + df['Departure Date'].dt.year.astype(str), True)
-                df.insert(1, "Travel Date Half Year", 'H' + df['Departure Date'].dt.month.gt(6).add(1).astype(str) + " " + df['Departure Date'].dt.year.astype(str), True)
-                df.insert(2, "Receive Quarter", quarter + " " + year, True)
-                df.insert(3, "Receive Half Year", self.half_year(quarter) + " " + year, True)
-                df.insert(4, "PoS", country, True)
-                df.insert(5, "Client", customer_name, True)
-                df.insert(6, "Agency", travel_agency, True)
-                df.insert(7, "Country", country, True)
-                df["Traveler Name"] = df["Traveler Name"]
-                df["Carrier Name"] = [i["carrier_name"] for i in airline_data for cc in carrier_code for k, v in i.items() if cc == v]
-                df["Origin City"] = [i["airport_city"] for oc in airport_ori_code for i in airport_data for k, v in i.items() if oc == v]
-                df["Origin Country"] = ""
-                df["Destination City"] = [i["airport_city"] for dc in airport_dest_code for i in airport_data for k, v in i.items() if dc == v]
-                df["Destination Country"] = ""
-                df["International vs. Domestic"] = ""
-                df["Refund / Exchange"] = ""
-                df["PNR Locator"] = df["PNR"]
-                df["Leg Counter"] = df["Leg Counter"]
-                df["Miles / Mileage"] = df["Segment Miles"]
-                df["CTV_Booking Class Code"] = df["Class of Service Code"]
-                df["CTV_Origin_Airport_Id"] = [i["airport_id"] for oc in airport_ori_code for i in airport_data for k, v in i.items() if oc == v]
-                df["CTV_Destination_Airport_Id"] = [i["airport_id"] for dc in airport_dest_code for i in airport_data for k, v in i.items() if dc == v]
-                df["CTV_Reference"] = df["Origin Airport Code"] + "-" + df["Destination Airport Code"] + "-" + df["Class of Service Code"]
-                df["CTV_Fare"] = df["Class of Service"]
-                df["CTV_Carrier_Id"] = [i["carrier_id"] for cc in carrier_code for i in airline_data for k, v in i.items() if cc == v]
-                df["CTV_Alliance_ID"] = [i["carrier_alliance_id"] for cc in carrier_code for i in airline_data for k, v in i.items() if cc == v]
-                alliance_data_list = df["CTV_Alliance_ID"].tolist()
-                df["Savings Alliance Classification"] = [i["alliance_name"] for adl in alliance_data_list for i in alliance_data for k, v in i.items() if adl == v]
+                    # Forming dataframe for final data
+                    df['Departure Date'] = pd.to_datetime(df['Departure Date'], format="%m/%d/%Y")
+                    df['Booked Date / Invoice Date'] = pd.to_datetime(df['Booked Date / Invoice Date'], format="%m/%d/%Y")
+                    df.insert(0, "Travel Date Quarter", 'Q' + df['Departure Date'].dt.quarter.astype(str) + " " + df['Departure Date'].dt.year.astype(str), True)
+                    df.insert(1, "Travel Date Half Year", 'H' + df['Departure Date'].dt.month.gt(6).add(1).astype(str) + " " + df['Departure Date'].dt.year.astype(str), True)
+                    df.insert(2, "Receive Quarter", quarter + " " + year, True)
+                    df.insert(3, "Receive Half Year", self.half_year(quarter) + " " + year, True)
+                    df.insert(4, "PoS", country, True)
+                    df.insert(5, "Client", customer_name, True)
+                    df.insert(6, "Agency", travel_agency, True)
+                    df.insert(7, "Country", country, True)
+                    traveler_names = df['Traveler Name'].tolist()
+                    df["Traveler Name"] = [i.replace('/', ', ') for i in traveler_names]
+                    df["Carrier Name"] = [i["carrier_name"] for i in airline_data for cc in carrier_code for k, v in i.items() if cc == v]
+                    df["International vs. Domestic"] = ""
+                    df["Refund / Exchange"] = ""
+                    df["PNR Locator"] = df["PNR"]
+                    df["Miles / Mileage"] = df["Segment Miles"]
+                    df["CTV_Booking Class Code"] = df["Class of Service Code"]
+                    df["CTV_Origin_Airport_Id"] = [i["airport_id"] for oc in airport_ori_code for i in airport_data for k, v in i.items() if oc == v]
+                    df["CTV_Destination_Airport_Id"] = [i["airport_id"] for dc in airport_dest_code for i in airport_data for k, v in i.items() if dc == v]
+                    df["CTV_Reference"] = df["Origin Airport Code"] + "-" + df["Destination Airport Code"] + "-" + df["Class of Service Code"]
+                    df["CTV_Fare"] = df["Class of Service"]
+                    df["CTV_Carrier_Id"] = [i["carrier_id"] for cc in carrier_code for i in airline_data for k, v in i.items() if cc == v]
+                    df["CTV_Alliance_ID"] = [i["carrier_alliance_id"] for cc in carrier_code for i in airline_data for k, v in i.items() if cc == v]
+                    alliance_data_list = df["CTV_Alliance_ID"].tolist()
+                    df["Savings Alliance Classification"] = [i["alliance_name"] for adl in alliance_data_list for i in alliance_data for k, v in i.items() if adl == v]
 
-                # Determine savings classifier based on departure data for Prism airlines
-                savings_alliance_classifier = df["Savings Alliance Classification"].tolist()
-                jet_departure_date_df = df.loc[df["Savings Alliance Classification"] == "JetBlue", "Departure Date"]
-                jet_departure_date_df = jet_departure_date_df.astype(str)
-                jet_departure_date = jet_departure_date_df.tolist()
-                jet_booking_class_code_df = df.loc[df["Savings Alliance Classification"] == "JetBlue", "CTV_Booking Class Code"]
-                jet_booking_class_code_df = jet_booking_class_code_df.astype(str)
-                jet_booking_class_code = jet_booking_class_code_df.tolist()
-                emi_references_df = df.loc[df["Savings Alliance Classification"] == "Emirates", "CTV_Reference"]
-                emi_references_df = emi_references_df.astype(str)
-                emi_references = emi_references_df.tolist()
-                tur_references_df = df.loc[df["Savings Alliance Classification"] == "Turkish", "CTV_Reference"]
-                tur_references_df = tur_references_df.astype(str)
-                tur_references = tur_references_df.tolist()
-                qan_references_df = df.loc[df["Savings Alliance Classification"] == "Qantas", "CTV_Reference"]
-                qan_references_df = qan_references_df.astype(str)
-                qan_references = qan_references_df.tolist()
-                sin_references_df = df.loc[df["Savings Alliance Classification"] == "Singapore", "CTV_Reference"]
-                sin_references_df = sin_references_df.astype(str)
-                sin_references = sin_references_df.tolist()
+                    # Determine savings classifier based on departure data for Prism airlines
+                    savings_alliance_classifier = df["Savings Alliance Classification"].tolist()
+                    jet_departure_date_df = df.loc[df["Savings Alliance Classification"] == "JetBlue", "Departure Date"]
+                    jet_departure_date_df = jet_departure_date_df.astype(str)
+                    jet_departure_date = jet_departure_date_df.tolist()
+                    jet_booking_class_code_df = df.loc[df["Savings Alliance Classification"] == "JetBlue", "CTV_Booking Class Code"]
+                    jet_booking_class_code_df = jet_booking_class_code_df.astype(str)
+                    jet_booking_class_code = jet_booking_class_code_df.tolist()
+                    emi_references_df = df.loc[df["Savings Alliance Classification"] == "Emirates", "CTV_Reference"]
+                    emi_references_df = emi_references_df.astype(str)
+                    emi_references = emi_references_df.tolist()
+                    tur_references_df = df.loc[df["Savings Alliance Classification"] == "Turkish", "CTV_Reference"]
+                    tur_references_df = tur_references_df.astype(str)
+                    tur_references = tur_references_df.tolist()
+                    qan_references_df = df.loc[df["Savings Alliance Classification"] == "Qantas", "CTV_Reference"]
+                    qan_references_df = qan_references_df.astype(str)
+                    qan_references = qan_references_df.tolist()
+                    sin_references_df = df.loc[df["Savings Alliance Classification"] == "Singapore", "CTV_Reference"]
+                    sin_references_df = sin_references_df.astype(str)
+                    sin_references = sin_references_df.tolist()
 
-                jet_ctv_references, emi_ctv_references, tur_ctv_references, qan_ctv_references, sin_ctv_references, jet_indexes, emi_indexes, tur_indexes, qan_indexes, sin_indexes = self.savings_classifier(savings_alliance_classifier, jet_departure_date, jet_booking_class_code, emi_references, tur_references, qan_references, sin_references)
-                jet_tour_code, jet_ticket_designator, emi_tour_code, emi_ticket_designator, tur_tour_code, tur_ticket_designator, qan_tour_code, sin_tour_code, sin_ticket_designator = self.tour_code_and_ticket_designator()
-                df["Departure Date"] = pd.to_datetime(df["Departure Date"]).dt.date
+                    jet_ctv_references, emi_ctv_references, tur_ctv_references, qan_ctv_references, sin_ctv_references, jet_indexes, emi_indexes, tur_indexes, qan_indexes, sin_indexes = self.savings_classifier(savings_alliance_classifier, jet_departure_date, jet_booking_class_code, emi_references, tur_references, qan_references, sin_references)
+                    jet_tour_code, jet_ticket_designator, emi_tour_code, emi_ticket_designator, tur_tour_code, tur_ticket_designator, qan_tour_code, sin_tour_code, sin_ticket_designator = self.tour_code_and_ticket_designator()
+                    df["Departure Date"] = pd.to_datetime(df["Departure Date"]).dt.strftime("%m/%d/%Y")
+                    df["Booked Date / Invoice Date"] = pd.to_datetime(df["Booked Date / Invoice Date"]).dt.strftime("%m/%d/%Y")                
 
-                contract_classifier, savings_tour_code, savings_ticket_designator, discount = [], [], [], []
-                [contract_classifier.append("Not Preferred Airlines") for i in range(len(savings_alliance_classifier))]
-                for i in savings_alliance_classifier:
-                    if i == "JetBlue":
-                        for j in range(len(jet_indexes)):
-                            contract_classifier[jet_indexes[j]] = jet_ctv_references[j]
-                    elif i == "Emirates":
-                        for e in range(len(emi_indexes)):
-                            contract_classifier[emi_indexes[e]] = emi_ctv_references[e]
-                    elif i == "Turkish":
-                        for t in range(len(tur_indexes)):
-                            contract_classifier[tur_indexes[t]] = tur_ctv_references[t]
-                    elif i == "Qantas":
-                        for q in range(len(qan_indexes)):
-                            contract_classifier[qan_indexes[q]] = qan_ctv_references[q]
-                    elif i == "Singapore":
-                        for s in range(len(sin_indexes)):
-                            contract_classifier[sin_indexes[s]] = sin_ctv_references[s]
-                
-                df["Savings Contract Classifier"] = [j for j in contract_classifier]
+                    contract_classifier, savings_tour_code, savings_ticket_designator, discount = [], [], [], []
+                    [contract_classifier.append("Not Preferred Airlines") for i in range(len(savings_alliance_classifier))]
+                    for i in savings_alliance_classifier:
+                        if i == "JetBlue":
+                            for j in range(len(jet_indexes)):
+                                contract_classifier[jet_indexes[j]] = jet_ctv_references[j]
+                        elif i == "Emirates":
+                            for e in range(len(emi_indexes)):
+                                contract_classifier[emi_indexes[e]] = emi_ctv_references[e]
+                        elif i == "Turkish":
+                            for t in range(len(tur_indexes)):
+                                contract_classifier[tur_indexes[t]] = tur_ctv_references[t]
+                        elif i == "Qantas":
+                            for q in range(len(qan_indexes)):
+                                contract_classifier[qan_indexes[q]] = qan_ctv_references[q]
+                        elif i == "Singapore":
+                            for s in range(len(sin_indexes)):
+                                contract_classifier[sin_indexes[s]] = sin_ctv_references[s]
+                    
+                    df["Savings Contract Classifier"] = [j for j in contract_classifier]
 
-                # Validating tour code and ticket designator
-                for i in range(len(savings_alliance_classifier)):
-                    savings_tour_code.append("Not Preferred Airlines")
-                    savings_ticket_designator.append("Not Preferred Airlines")
+                    # Validating tour code and ticket designator
+                    for i in range(len(savings_alliance_classifier)):
+                        savings_tour_code.append("Not Preferred Airlines")
+                        savings_ticket_designator.append("Not Preferred Airlines")
 
-                tour_code = df["Tour Code"].tolist()
-                ticket_designator = df["Ticket Designator"].tolist()
-                df["Tour Code"] = df["Tour Code"].astype(str)
-                df["Ticket Designator"] = df["Ticket Designator"].astype(str)
-                default_discount = 0.00
-                [discount.append(default_discount) for i in range(len(savings_alliance_classifier))]
+                    tour_code = df["Tour Code"].tolist()
+                    ticket_designator = df["Ticket Designator"].tolist()
+                    df["Tour Code"] = df["Tour Code"].astype(str)
+                    df["Ticket Designator"] = df["Ticket Designator"].astype(str)
+                    default_discount = 0.00
+                    [discount.append(default_discount) for i in range(len(savings_alliance_classifier))]
 
-                # Checking tour code and ticket designator for Non Prism Flights
-                for i in savings_alliance_classifier:
-                    if i == "JetBlue":
-                        discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, jet_indexes, jet_tour_code, jet_ticket_designator)
-                    elif i == "Emirates":
-                        discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, emi_indexes, emi_tour_code, emi_ticket_designator)
-                    elif i == "Turkish":
-                        discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, tur_indexes, tur_tour_code, tur_ticket_designator)
-                    elif i == "Qantas":
-                        discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, qan_indexes, qan_tour_code, "nan")
-                    elif i == "Singapore":
-                        discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, sin_indexes, sin_tour_code, sin_ticket_designator)
+                    # Checking tour code and ticket designator for Non Prism Flights
+                    for i in savings_alliance_classifier:
+                        if i == "JetBlue":
+                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, jet_indexes, jet_tour_code, jet_ticket_designator)
+                        elif i == "Emirates":
+                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, emi_indexes, emi_tour_code, emi_ticket_designator)
+                        elif i == "Turkish":
+                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, tur_indexes, tur_tour_code, tur_ticket_designator)
+                        elif i == "Qantas":
+                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, qan_indexes, qan_tour_code, "nan")
+                        elif i == "Singapore":
+                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, sin_indexes, sin_tour_code, sin_ticket_designator)
 
-                df["Tour Code"] = [tc for tc in tour_code]
-                df["Ticket Designator"] = [td for td in ticket_designator]
-                df["Contract Classifier Tour Code"] = [tc for tc in savings_tour_code]
-                df["Contract Classifier Ticket Designator"] = [td for td in savings_ticket_designator]
-                discount_if_applied = []
-                classifier_tour_code = df["Contract Classifier Tour Code"].tolist()
-                classifier_ticket_designator = df["Contract Classifier Ticket Designator"].tolist()
-                [discount_if_applied.append("Y") if ctc == "Available, Matched" or ctd == "Available, Matched" else discount_if_applied.append("N") for ctc, ctd in zip(classifier_tour_code, classifier_ticket_designator)]
-                df["If Discount Applied"] = [da for da in discount_if_applied]
-                df["Discount"] = [d for d in discount]
-                pre_dis, pre, sav = [], [], []
-                fare = df["Fare"].tolist()
-                discount = df["Discount"].tolist()
-                pre_dis, pre, sav, reference_code_missing, non_prism = [], [], [], [], []
-                [reference_code_missing.append("Y") if d == 99999.9 else reference_code_missing.append("N") for d in discount]
-                df["If Reference Missing"] = [ref for ref in reference_code_missing]
-                [pre.append(1 - d) for d in discount]
-                [pre_dis.append(f / d) for f, d in zip(fare, pre)]
-                df["Pre-Discount Cost"] = [pr for pr in pre_dis]
-                df["Pre-Discount Cost"] = df["Pre-Discount Cost"].round(2)
-                pre_disc_cost = df["Pre-Discount Cost"].tolist()
-                [sav.append(pre - f) for f, pre in zip(fare, pre_disc_cost)]
-                df["Savings"] = [s for s in sav]
-                df["Savings"] = df["Savings"].round(2)
-                data = self.config_path()
-                for ali in range(len(savings_alliance_classifier)):
-                    non_prism.append("Y")
-                    if savings_alliance_classifier[ali] in data["group_deals"]:
-                        non_prism[ali] = "N"
-                df["Non-Prism Preferred"] = [np for np in non_prism]
-                
+                    df["Tour Code"] = [tc for tc in tour_code]
+                    df["Ticket Designator"] = [td for td in ticket_designator]
+                    df["Contract Classifier Tour Code"] = [tc for tc in savings_tour_code]
+                    df["Contract Classifier Ticket Designator"] = [td for td in savings_ticket_designator]
+                    discount_if_applied = []
+                    classifier_tour_code = df["Contract Classifier Tour Code"].tolist()
+                    classifier_ticket_designator = df["Contract Classifier Ticket Designator"].tolist()
+                    [discount_if_applied.append("Y") if ctc == "Available, Matched" or ctd == "Available, Matched" else discount_if_applied.append("N") for ctc, ctd in zip(classifier_tour_code, classifier_ticket_designator)]
+                    df["If Discount Applied"] = [da for da in discount_if_applied]
+                    df["Discount"] = [d for d in discount]
+                    pre_dis, pre, sav = [], [], []
+                    fare = df["Fare"].tolist()
+                    discount = df["Discount"].tolist()
+                    pre_dis, pre, sav, reference_code_missing, non_prism = [], [], [], [], []
+                    [reference_code_missing.append("Y") if d == 99999.9 else reference_code_missing.append("N") for d in discount]
+                    df["If Reference Missing"] = [ref for ref in reference_code_missing]
+                    [pre.append(1 - d) for d in discount]
+                    [pre_dis.append(f / d) for f, d in zip(fare, pre)]
+                    df["Pre-Discount Cost"] = [pr for pr in pre_dis]
+                    df["Pre-Discount Cost"] = df["Pre-Discount Cost"].round(2)
+                    pre_disc_cost = df["Pre-Discount Cost"].tolist()
+                    [sav.append(pre - f) for f, pre in zip(fare, pre_disc_cost)]
+                    df["Savings"] = [s for s in sav]
+                    df["Savings"] = df["Savings"].round(2)
+                    data = self.config_path()
+                    for ali in range(len(savings_alliance_classifier)):
+                        non_prism.append("Y")
+                        if savings_alliance_classifier[ali] in data["group_deals"]:
+                            non_prism[ali] = "N"
+                    df["Non-Prism Preferred"] = [np for np in non_prism]
+                    
 
-                # Rearranging the columns
-                headers = ["Travel Date Quarter", "Travel Date Half Year", "Receive Quarter", "Receive Half Year", "PoS", "Client", "Agency", 
-                        "Country", "Traveler Name", "Booked Date / Invoice Date", "Departure Date",
-                        "Carrier Code", "Carrier Name", "Class of Service Code", "Class of Service", "Fare Basis Code",
-                        "Origin Airport Code", "Origin City", "Origin Country", "Destination Airport Code", "Destination City",
-                        "Destination Country", "Itinerary / Routing", "Tour Code", "Ticket Designator", "Fare", "Tax", "Refund / Exchange", "Booking Source", "Leg Counter", "Miles / Mileage",
-                        "International vs. Domestic", "PNR Locator", "CTV_Booking Class Code", "CTV_Origin_Airport_Id", "CTV_Destination_Airport_Id",
-                        "CTV_Reference", "CTV_Fare", "CTV_Carrier_Id", "CTV_Alliance_ID", "Savings Alliance Classification",
-                        "Savings Contract Classifier", "Discount", "Pre-Discount Cost", "Savings", "Non-Prism Preferred",
-                        "Contract Classifier Tour Code", "Contract Classifier Ticket Designator", "If Discount Applied", "If Reference Missing"]
+                    # Rearranging the columns
+                    headers = ["Travel Date Quarter", "Travel Date Half Year", "Receive Quarter", "Receive Half Year", 
+                            "PoS", "Client", "Agency", "Country", "Traveler Name", "Booked Date / Invoice Date", 
+                            "Departure Date", "Carrier Code", "Carrier Name", "Class of Service Code", "Class of Service", 
+                            "Fare Basis Code", "Origin Airport Code", "Destination Airport Code", "Itinerary / Routing",
+                            "Tour Code", "Ticket Designator", "Fare", "Tax", "Refund / Exchange", "Miles / Mileage", 
+                            "International vs. Domestic", "PNR Locator", "CTV_Booking Class Code", "CTV_Origin_Airport_Id", 
+                            "CTV_Destination_Airport_Id", "CTV_Reference", "CTV_Fare", "CTV_Carrier_Id", "CTV_Alliance_ID", 
+                            "Savings Alliance Classification", "Savings Contract Classifier", "Discount", "Pre-Discount Cost", 
+                            "Savings", "Non-Prism Preferred", "Contract Classifier Tour Code", "Contract Classifier Ticket Designator", 
+                            "If Discount Applied", "If Reference Missing"]
 
-                df = df.reindex(columns=headers)
+                    df = df.reindex(columns=headers)
 
-                # Reading Prism flights data
-                n = 4
-                prism_airlines_discount_list, vol_list, net_list, sav_list, total_list = [], [], [], [], []
-                total_prism_pre_discount, total_prism_actual_spend, total_prism_savings, total_prism_vol, total_prism_net = 0.0, 0.0, 0.0, 0.0, 0.0
-                total_list.append("Total")
-                prism_airlines = ["American / Oneworld", "Delta / SkyTeam", "United / Star Alliance"]
-                quarter_year = quarter + " " + year
-                win_etl_file_path = self.base_path()
-                new_file_path = Path(os.path.join(win_etl_file_path, customer_name, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
-                prism_file_name = "Air PRISM & Other.xlsx"
-                csv_prism_file_name = "Air PRISM & Other.csv"
-                file_path = Path(os.path.join(new_file_path, prism_file_name))
-                csv_file_path = Path(os.path.join(new_file_path, csv_prism_file_name))
-                prism_airlines_discount = self.prism_flights_info(file_path, csv_file_path, quarter_year, prism_airlines)
-                prism_airlines_discount_list = [prism_airlines_discount[i * n:(i + 1) * n] for i in range((len(prism_airlines_discount) + n - 1) // n)]
-                for p in range(len(prism_airlines)):
-                    x = df.index[df["Savings Alliance Classification"] == prism_airlines[p]].tolist()
-                    vol = len(x) / len(df.index)
-                    vol = vol * 100
-                    total_prism_vol = total_prism_vol + vol
-                    p_vol = "{:,.2f}".format(vol) + "%"
-                    vol_list.append(p_vol)
-                    prism_sum_pre_discount = float(prism_airlines_discount_list[p][1])
-                    total_prism_pre_discount = total_prism_pre_discount + prism_sum_pre_discount
-                    prism_sum_actual_spend = float(prism_airlines_discount_list[p][2])
-                    total_prism_actual_spend = total_prism_actual_spend + prism_sum_actual_spend
-                    prism_sum_savings = float(prism_airlines_discount_list[p][3])
-                    total_prism_savings = total_prism_savings + prism_sum_savings
-                    net = (prism_sum_actual_spend / prism_sum_pre_discount) * 100
-                    total_prism_net = total_prism_net + net
-                    prism_airlines_discount_list[p][1] = "$" + "{:,.2f}".format(prism_airlines_discount_list[p][1])
-                    prism_airlines_discount_list[p][2] = "$" + "{:,.2f}".format(prism_airlines_discount_list[p][2])
-                    prism_airlines_discount_list[p][3] = "$" + "{:,.2f}".format(prism_airlines_discount_list[p][3])
-                    p_net = "{:,.2f}".format(net) + "%"
-                    net_list.append(p_net)
-                    sav_list.append(prism_airlines_discount_list[p][3])
-                for pa, i, j, k in zip(prism_airlines_discount_list, vol_list, net_list, sav_list):
-                    pa.insert(3, i)
-                    pa.insert(5, j)
-                    pa.insert(6, k)
+                    # Reading Prism flights data
+                    n = 4
+                    prism_airlines_discount_list, vol_list, net_list, sav_list, total_list = [], [], [], [], []
+                    total_prism_pre_discount, total_prism_actual_spend, total_prism_savings, total_prism_vol, total_prism_net = 0.0, 0.0, 0.0, 0.0, 0.0
+                    total_list.append("Total")
+                    prism_airlines = ["American / Oneworld", "Delta / SkyTeam", "United / Star Alliance"]
+                    quarter_year = quarter + " " + year
+                    win_etl_file_path = self.base_path()
+                    new_file_path = Path(os.path.join(win_etl_file_path, customer_name, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
+                    prism_file_name = "Air PRISM & Other.xlsx"
+                    csv_prism_file_name = "Air PRISM & Other.csv"
+                    file_path = Path(os.path.join(new_file_path, prism_file_name))
+                    csv_file_path = Path(os.path.join(new_file_path, csv_prism_file_name))
+                    prism_airlines_discount = self.prism_flights_info(file_path, csv_file_path, quarter_year, prism_airlines)
+                    prism_airlines_discount_list = [prism_airlines_discount[i * n:(i + 1) * n] for i in range((len(prism_airlines_discount) + n - 1) // n)]
+                    for p in range(len(prism_airlines)):
+                        x = df.index[df["Savings Alliance Classification"] == prism_airlines[p]].tolist()
+                        vol = len(x) / len(df.index)
+                        vol = vol * 100
+                        total_prism_vol = total_prism_vol + vol
+                        p_vol = "{:,.2f}".format(vol) + "%"
+                        vol_list.append(p_vol)
+                        prism_sum_pre_discount = float(prism_airlines_discount_list[p][1])
+                        total_prism_pre_discount = total_prism_pre_discount + prism_sum_pre_discount
+                        prism_sum_actual_spend = float(prism_airlines_discount_list[p][2])
+                        total_prism_actual_spend = total_prism_actual_spend + prism_sum_actual_spend
+                        prism_sum_savings = float(prism_airlines_discount_list[p][3])
+                        total_prism_savings = total_prism_savings + prism_sum_savings
+                        net = (prism_sum_actual_spend / prism_sum_pre_discount) * 100
+                        total_prism_net = total_prism_net + net
+                        prism_airlines_discount_list[p][1] = "$" + "{:,.2f}".format(prism_airlines_discount_list[p][1])
+                        prism_airlines_discount_list[p][2] = "$" + "{:,.2f}".format(prism_airlines_discount_list[p][2])
+                        prism_airlines_discount_list[p][3] = "$" + "{:,.2f}".format(prism_airlines_discount_list[p][3])
+                        p_net = "{:,.2f}".format(net) + "%"
+                        net_list.append(p_net)
+                        sav_list.append(prism_airlines_discount_list[p][3])
+                    for pa, i, j, k in zip(prism_airlines_discount_list, vol_list, net_list, sav_list):
+                        pa.insert(3, i)
+                        pa.insert(5, j)
+                        pa.insert(6, k)
 
-                # Final report after CPR process
-                jet_blue_list, emi_list, tur_list, qan_list, sin_list, non_prism_list = [], [], [], [], [], []
-                for i in prefered_airline_data:
-                    for k, v in i.items():
-                        if v == "JetBlue":
-                            sum_jet_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "JetBlue", "Pre-Discount Cost"].sum()
-                            sum_jet_fare = df.loc[df["Savings Alliance Classification"] == "JetBlue", "Fare"].sum()
-                            sum_jet_savings = df.loc[df["Savings Alliance Classification"] == "JetBlue", "Savings"].sum()
-                            jet_blue_list.append("JetBlue")
-                            jet_blue_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings = self.calculate_total(df, jet_blue_list, jet_indexes, sum_jet_pre_dis_cost, sum_jet_fare, sum_jet_savings, total_prism_pre_discount, total_prism_actual_spend, total_prism_vol, total_prism_savings, total_prism_net)
-                            non_prism_list.append(jet_blue_list)
-                        elif v == "Emirates":
-                            sum_emi_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "Emirates", "Pre-Discount Cost"].sum()
-                            sum_emi_fare = df.loc[df["Savings Alliance Classification"] == "Emirates", "Fare"].sum()
-                            sum_emi_savings = df.loc[df["Savings Alliance Classification"] == "Emirates", "Savings"].sum()
-                            emi_list.append("Emirates")
-                            emi_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings = self.calculate_total(df, emi_list, emi_indexes, sum_emi_pre_dis_cost, sum_emi_fare, sum_emi_savings, total_prism_pre_discount, total_prism_actual_spend, total_prism_vol, total_prism_savings, total_prism_net)
-                            non_prism_list.append(emi_list)
-                        elif v == "Turkish":
-                            sum_tur_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "Turkish", "Pre-Discount Cost"].sum()
-                            sum_tur_fare = df.loc[df["Savings Alliance Classification"] == "Turkish", "Fare"].sum()
-                            sum_tur_savings = df.loc[df["Savings Alliance Classification"] == "Turkish", "Savings"].sum()
-                            tur_list.append("Turkish")
-                            tur_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings = self.calculate_total(df, tur_list, tur_indexes, sum_tur_pre_dis_cost, sum_tur_fare, sum_tur_savings, total_prism_pre_discount, total_prism_actual_spend, total_prism_vol, total_prism_savings, total_prism_net)
-                            non_prism_list.append(tur_list)
-                        elif v == "Qantas":
-                            sum_qan_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "Qantas", "Pre-Discount Cost"].sum()
-                            sum_qan_fare = df.loc[df["Savings Alliance Classification"] == "Qantas", "Fare"].sum()
-                            sum_qan_savings = df.loc[df["Savings Alliance Classification"] == "Qantas", "Savings"].sum()
-                            qan_list.append("Qantas")
-                            qan_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings = self.calculate_total(df, qan_list, qan_indexes, sum_qan_pre_dis_cost, sum_qan_fare, sum_qan_savings, total_prism_pre_discount, total_prism_actual_spend, total_prism_vol, total_prism_savings, total_prism_net)
-                            non_prism_list.append(qan_list)
-                        elif v == "Singapore":
-                            sum_sin_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "Singapore", "Pre-Discount Cost"].sum()
-                            sum_sin_fare = df.loc[df["Savings Alliance Classification"] == "Singapore", "Fare"].sum()
-                            sum_sin_savings = df.loc[df["Savings Alliance Classification"] == "Singapore", "Savings"].sum()
-                            sin_list.append("Singapore")
-                            sin_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings = self.calculate_total(df, sin_list, sin_indexes, sum_sin_pre_dis_cost, sum_sin_fare, sum_sin_savings, total_prism_pre_discount, total_prism_actual_spend, total_prism_vol, total_prism_savings, total_prism_net)
-                            non_prism_list.append(sin_list)
-                        
-                
-                # Values to populate on graphs
-                final_pre_discount = total_non_prism_pre_discount + total_prism_pre_discount
-                request.session['final_pre_discount'] = final_pre_discount
-                final_savings = total_non_prism_savings + total_prism_savings
-                request.session['final_savings'] = final_savings
-                actual_spend = total_non_prism_actual_spend + total_prism_actual_spend
-                request.session['actual_spend'] = actual_spend
-                
-                total_non_prism_pre_discount = "$" + "{:,.2f}".format(total_non_prism_pre_discount)
-                total_list.append(total_non_prism_pre_discount)
-                total_non_prism_actual_spend = "$" + "{:,.2f}".format(total_non_prism_actual_spend)
-                total_list.append(total_non_prism_actual_spend)
-                total_non_prism_vol = "{:,.2f}".format(total_non_prism_vol) + "%"
-                total_list.append(total_non_prism_vol)
-                total_non_prism_savings = "$" + "{:,.2f}".format(total_non_prism_savings)
-                total_list.append(total_non_prism_savings)
-                total_non_prism_net = "{:,.2f}".format(total_non_prism_net) + "%"
-                total_list.append(total_non_prism_net)
-                total_non_prism_final_savings = "$" + "{:,.2f}".format(total_non_prism_final_savings)
-                total_list.append(total_non_prism_final_savings)
-                
-                table = {"non_prism_list": non_prism_list, "prism_list": prism_airlines_discount_list, "total_list": total_list}
+                    # Final report after CPR process
+                    jet_blue_list, emi_list, tur_list, qan_list, sin_list, non_prism_list = [], [], [], [], [], []
+                    for i in prefered_airline_data:
+                        for k, v in i.items():
+                            if v == "JetBlue":
+                                sum_jet_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "JetBlue", "Pre-Discount Cost"].sum()
+                                sum_jet_fare = df.loc[df["Savings Alliance Classification"] == "JetBlue", "Fare"].sum()
+                                sum_jet_savings = df.loc[df["Savings Alliance Classification"] == "JetBlue", "Savings"].sum()
+                                jet_blue_list.append("JetBlue")
+                                jet_blue_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings = self.calculate_total(df, jet_blue_list, jet_indexes, sum_jet_pre_dis_cost, sum_jet_fare, sum_jet_savings, total_prism_pre_discount, total_prism_actual_spend, total_prism_vol, total_prism_savings, total_prism_net)
+                                non_prism_list.append(jet_blue_list)
+                            elif v == "Emirates":
+                                sum_emi_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "Emirates", "Pre-Discount Cost"].sum()
+                                sum_emi_fare = df.loc[df["Savings Alliance Classification"] == "Emirates", "Fare"].sum()
+                                sum_emi_savings = df.loc[df["Savings Alliance Classification"] == "Emirates", "Savings"].sum()
+                                emi_list.append("Emirates")
+                                emi_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings = self.calculate_total(df, emi_list, emi_indexes, sum_emi_pre_dis_cost, sum_emi_fare, sum_emi_savings, total_prism_pre_discount, total_prism_actual_spend, total_prism_vol, total_prism_savings, total_prism_net)
+                                non_prism_list.append(emi_list)
+                            elif v == "Turkish":
+                                sum_tur_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "Turkish", "Pre-Discount Cost"].sum()
+                                sum_tur_fare = df.loc[df["Savings Alliance Classification"] == "Turkish", "Fare"].sum()
+                                sum_tur_savings = df.loc[df["Savings Alliance Classification"] == "Turkish", "Savings"].sum()
+                                tur_list.append("Turkish")
+                                tur_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings = self.calculate_total(df, tur_list, tur_indexes, sum_tur_pre_dis_cost, sum_tur_fare, sum_tur_savings, total_prism_pre_discount, total_prism_actual_spend, total_prism_vol, total_prism_savings, total_prism_net)
+                                non_prism_list.append(tur_list)
+                            elif v == "Qantas":
+                                sum_qan_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "Qantas", "Pre-Discount Cost"].sum()
+                                sum_qan_fare = df.loc[df["Savings Alliance Classification"] == "Qantas", "Fare"].sum()
+                                sum_qan_savings = df.loc[df["Savings Alliance Classification"] == "Qantas", "Savings"].sum()
+                                qan_list.append("Qantas")
+                                qan_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings = self.calculate_total(df, qan_list, qan_indexes, sum_qan_pre_dis_cost, sum_qan_fare, sum_qan_savings, total_prism_pre_discount, total_prism_actual_spend, total_prism_vol, total_prism_savings, total_prism_net)
+                                non_prism_list.append(qan_list)
+                            elif v == "Singapore":
+                                sum_sin_pre_dis_cost = df.loc[df["Savings Alliance Classification"] == "Singapore", "Pre-Discount Cost"].sum()
+                                sum_sin_fare = df.loc[df["Savings Alliance Classification"] == "Singapore", "Fare"].sum()
+                                sum_sin_savings = df.loc[df["Savings Alliance Classification"] == "Singapore", "Savings"].sum()
+                                sin_list.append("Singapore")
+                                sin_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings = self.calculate_total(df, sin_list, sin_indexes, sum_sin_pre_dis_cost, sum_sin_fare, sum_sin_savings, total_prism_pre_discount, total_prism_actual_spend, total_prism_vol, total_prism_savings, total_prism_net)
+                                non_prism_list.append(sin_list)
+                            
+                    
+                    # Values to populate on graphs
+                    final_pre_discount = total_non_prism_pre_discount + total_prism_pre_discount
+                    request.session['final_pre_discount'] = final_pre_discount
+                    final_savings = total_non_prism_savings + total_prism_savings
+                    request.session['final_savings'] = final_savings
+                    actual_spend = total_non_prism_actual_spend + total_prism_actual_spend
+                    request.session['actual_spend'] = actual_spend
+                    
+                    total_non_prism_pre_discount = "$" + "{:,.2f}".format(total_non_prism_pre_discount)
+                    total_list.append(total_non_prism_pre_discount)
+                    total_non_prism_actual_spend = "$" + "{:,.2f}".format(total_non_prism_actual_spend)
+                    total_list.append(total_non_prism_actual_spend)
+                    total_non_prism_vol = "{:,.2f}".format(total_non_prism_vol) + "%"
+                    total_list.append(total_non_prism_vol)
+                    total_non_prism_savings = "$" + "{:,.2f}".format(total_non_prism_savings)
+                    total_list.append(total_non_prism_savings)
+                    total_non_prism_net = "{:,.2f}".format(total_non_prism_net) + "%"
+                    total_list.append(total_non_prism_net)
+                    total_non_prism_final_savings = "$" + "{:,.2f}".format(total_non_prism_final_savings)
+                    total_list.append(total_non_prism_final_savings)
+                    
+                    table = {"non_prism_list": non_prism_list, "prism_list": prism_airlines_discount_list, "total_list": total_list}
 
-                # Writing new column names into separate .xlsx file
-                win_etl_file_path = self.base_path()
-                new_file_path = Path(os.path.join(win_etl_file_path, customer_name, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
-                new_file_name = customer_name + "_Air_" + quarter + year + "_"+ country +"_FinalData" + ".xlsx"
-                file_name = Path(os.path.join(new_file_path, new_file_name))
-                df.to_excel(file_name, encoding='utf8', index=False)
-                
-                # os.chdir(cwd)
-                context = {'table': table, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'final_sheet': file_name}
-                return render(request, self.template_name, context=context)
-        except FileNotFoundError:
-            message = ("Unable to find CSV file in specified directory: %s" % csv_file_path)
-            context = {'message': message}
-            return render(request, self.error_url, context)
-        finally:
+                    # Writing new column names into separate .xlsx file
+                    win_etl_file_path = self.base_path()
+                    new_file_path = Path(os.path.join(win_etl_file_path, customer_name, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
+                    new_file_name = customer_name + "_Air_" + quarter + year + "_"+ country +"_FinalData" + ".xlsx"
+                    file_name = Path(os.path.join(new_file_path, new_file_name))
+                    df.to_excel(file_name, encoding='utf8', index=False)
+                    
+                    context = {'table': table, 'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'final_sheet': file_name}
+                    return render(request, self.template_name, context=context)
+            except FileNotFoundError:
+                message = ("Unable to find CSV file in specified directory: %s" % csv_file_path)
+                context = {'message': message}
+                return render(request, self.error_url, context)
+            finally:
                 # Deleting previous version of CSV - raw data file
                 os.chdir(new_file_path)
                 pre_csv_file = customer_name + "_Air_" + year + quarter + "_" + country + ".csv"
@@ -647,7 +685,10 @@ class ProcessDataView(BasicView):
                 air_prism_file = Path(os.path.join(new_file_path, "Air PRISM & Other.csv"))
                 if os.path.exists(air_prism_file):
                     os.remove(air_prism_file)          
-            
+        else:
+            message = "Unauthorized access. Please login again."
+            return render(request, self.error_url, context={'message': message})
+        return render(request, self.template_name, context={'username': username})
     
 class GraphsView(TemplateView):
     cwd = os.getcwd()

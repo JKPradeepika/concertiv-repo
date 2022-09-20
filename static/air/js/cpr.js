@@ -99,18 +99,3 @@ function launchOneSchema(jwt_token) {
   })
 }
 
-var auto_refresh = setInterval(function() {
-  document.getElementById("process_data").submit();
-}, 2000);
-
-var content = document.getElementById("container");
-content.style.display="none";
-setTimeout(function(){
-    content.style.display="block";
-}, 5000);
-
-var processing = document.getElementById("processing");
-processing.style.display="block";
-setTimeout(function(){
-    processing.style.display="none";
-}, 500);
