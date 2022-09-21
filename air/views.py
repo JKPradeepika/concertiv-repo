@@ -1,6 +1,4 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.views import LoginView, LogoutView
-from django.contrib.auth import authenticate, login, logout
+from django.shortcuts import render
 from django.views.generic import TemplateView, View
 
 from .forms import *
@@ -231,39 +229,7 @@ class BasicView(View):
         airline_list.append(savings)
         return airline_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings
 
-class AdminLogin(LoginView):
-    form_class = AdminLoginForm
-    template_name = 'users/admin_login.html'
-    success_url = 'commons/home.html'
     
-    def get(self, request, *args, **kwargs):
-        form = self.form_class
-        return render(request, self.template_name, context={'form': form})
-    
-    def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST)
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        username = str(User.objects.get(username=username))
-        user = authenticate(username=username, password=password)
-        if not user:
-            message = "Invalid login credentials. Please try again."
-        if user is not None:
-            login(request, user)
-            request.session.create()
-            request.session['username'] = username
-            request.session.set_expiry(900)
-            request.session.save()
-            return render(request, self.success_url, context={'username': username})
-        return render(request, self.template_name, context={'form': form, 'message': message})
-    
-class AdminLogout(LogoutView):
-    template_name = "commons/home.html"
-    
-    def post(self, request, *args, **kwargs):
-        logout(request)
-        return render(request, self.template_name)
-            
 class HomeView(TemplateView):
     template_name = 'commons/home.html'
     
@@ -317,7 +283,7 @@ class RawDataView(BasicView):
         else:
             message = "Unauthorized access. Please login again."
             return render(request, self.error_url, context={'message': message})
-        return render(request, self.template_name, {'form': form, 'username': username})
+        return render(request, self.template_name, context={'form': form, 'username': username})
 
 class LoadRawDataView(BasicView):
     template_name = 'air/load_raw_data.html'

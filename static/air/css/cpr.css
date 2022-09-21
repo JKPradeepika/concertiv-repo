@@ -14,7 +14,10 @@
   padding-top: 10px;
   padding-bottom: 10px;
 }
-
+.side-color{
+  background-color: #154360;
+  color: #fff;
+}
 .not_visible{
   display: none;
 }
@@ -98,6 +101,15 @@ p.data{
 div.container-fluid.home-container{
   color: #154360;
 }
+hr.login{
+  text-align: center;
+  margin-left: 30%;
+  margin-right: 30%;
+  height:20px;
+  border-width:0;
+  color:#154360;
+  background-color:#154360;
+}
 .border {
   text-align: center;
   display: inline-block;
@@ -125,6 +137,17 @@ h1{
   color: #154360;
   text-align: center;
 }
+.sidebar {
+  width: 180px;
+  }
+  
+@media (min-width: 768px) {
+  .main {
+  padding-right: 40px;
+  padding-left: 220px; /* 180 + 40 */
+  }
+}
+
 .dropdown-menu {
   margin-top: 0;
 }

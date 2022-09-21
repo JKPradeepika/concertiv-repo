@@ -1,12 +1,14 @@
 {% extends 'commons/admin_header.html'%}
+{% load static %}
 {% block content %}
   <br><br><br><br><br><br>
     <div class="row">
       <div class="center">
         <form action="home" method="post">
           <div class="container-fluid text-center">
-            <h3>CPR ::: Sign In</h3>
-            <br>
+            <img src="{% static 'air/images/icon.png' %}" width="35" height="35" alt="Concertiv - Logo"><br><br>
+            <h3>Please Sign In</h3>
+            <hr class="login">
               {% csrf_token %}
               <center>
                 <table class="raw_data_table">

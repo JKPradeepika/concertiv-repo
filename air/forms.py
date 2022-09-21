@@ -2,10 +2,6 @@ from django import forms
 from .models import Preference
 
 
-class AdminLoginForm(forms.Form):
-    username = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Enter Username', 'text-align': 'center'}), label='Username', max_length=50, required=True)
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Enter Password', 'text-align': 'center'}), label='Password', max_length=10, required=True)
-
 class RawdataForm(forms.Form):
     travel_agency = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'enter travel agency', 'text-align': 'center'}), label='Agency', max_length=50, required=True)
     customer_name = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'enter client name', 'text-align': 'center'}), label='Client Name', max_length=50, required=True)

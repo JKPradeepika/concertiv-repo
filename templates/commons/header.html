@@ -34,7 +34,7 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="nav navbar-nav navbar-center">
             <li class="nav-item">
-              <a class="nav-link active" aria-current="page" href="{% url 'home'%}">Home</a>
+              <a class="nav-link active" aria-current="page" href="{% url 'air:home'%}">Home</a>
             </li>
             <li class="nav-item dropdown">
               <a
@@ -55,7 +55,7 @@
                     Airlines
                   </a>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{% url 'raw_data' %}" >CPR Process</a></li>
+                    <li><a class="dropdown-item" href="{% url 'air:raw_data' %}" >CPR Process</a></li>
                   </ul>
                 </li>
                 <li><a class="dropdown-item" href="#">Cars</a></li>
@@ -79,18 +79,13 @@
             Hi, {{ username }}
           </button>
           <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-            <li><a class="dropdown-item" href="#">Profile</a></li>
-            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+            <li><a class="dropdown-item" href="{% url 'superuser:profile' %}">Profile</a></li>
+            <li><a class="dropdown-item" href="{% url 'superuser:logout' %}">Logout</a></li>
           </ul>
         </div>
       {% else %}
-          <a class="signin" href="{% url 'login' %}">Sign In</a>
+          <a class="signin" href="{% url 'superuser:login' %}">Sign In</a>
       {% endif %}
-       
-        {% comment %} <div class="dropdown">
-          <a class="signin" href="{% url 'login' %}">Sign In</a>
-      </div> {% endcomment %}
-      
       </div>
     </nav>
     <script>
