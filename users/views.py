@@ -39,21 +39,12 @@ class AdminLogout(LogoutView):
     
     def post(self, request, *args, **kwargs):
         logout(request)
-        return render(request, self.template_name)
+        return render(request, self.template_name)  
     
-# class AdminProfile(TemplateView):
-#     template_name = "users/admin_sidebar.html"
-    
-#     def get(self, request, *args, **kwargs):
-#         if request.session.has_key('username'):
-#             username = request.session.get('username')
-#             return render(request, self.template_name, context={'username': username})
-#         else:
-#             message = "Unauthorized access. Please login again."
-#             return render(request, self.error_url, context={'message': message})     
 
 class AdminProfile(DetailView, FormView):
-    template_name = "users/admin_profile.html"
+    template_name = "users/profile.html"
+    error_url = "commons/error.html"
     
     def get(self, request, *args, **kwargs):
         if request.session.has_key('username'):
@@ -68,4 +59,17 @@ class AdminProfile(DetailView, FormView):
         else:
             message = "Unauthorized access. Please login again."
             return render(request, self.error_url, context={'message': message})
-        
+
+class CreateUser(CreateView):
+    form_class = UserSignupForm
+    template_name = "users/create_user.html"
+    error_url = "commons/error.html"
+    
+    def get(self, request, *args, **kwargs):
+        if request.session.has_key('username'):
+            username = request.session.get('username')
+            form = self.form_class
+            return render(request, self.template_name, context={'form': form, 'username': username})
+        else:
+            message = "Unauthorized access. Please login again."
+            return render(request, self.error_url, context={'message': message})

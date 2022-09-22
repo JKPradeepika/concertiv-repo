@@ -98,4 +98,3 @@ function launchOneSchema(jwt_token) {
     // TODO: handle errors
   })
 }
-

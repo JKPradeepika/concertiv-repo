@@ -1,0 +1,20 @@
+{% extends 'commons/admin_header.html'%}
+{% block content %}
+<div class="row">
+    <div class="center">
+      <form action="home" method="post">
+        <div class="container-fluid text-center">
+          <h3>Create CPR User</h3>
+            <center>
+              <table class="raw_data_table">
+                <br>
+                {{ form.as_table }}
+              </table>
+            </center>
+            <br>
+            <button type="submit" class="btn btn-primary">Sign In</button>
+          </div>
+        </form>
+    </div> 
+</div>
+{% endblock %}

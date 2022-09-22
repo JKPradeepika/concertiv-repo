@@ -1,0 +1,25 @@
+{% extends 'commons/admin_header.html'%}
+{% block content %}
+<div class="container-fluid text-center">
+    <div class="row">
+        <h3>User Information</h3>
+            <center>
+                <br><br>
+                <table class="table table-borderless text-center">
+                    <tr>
+                        <th> Username </th>
+                        <th> Email </th>
+                        <th> Role </th>
+                        <th> Last Login </th>
+                    </tr>
+                    <tr> 
+                        <td> {{ username }} </td> 
+                        <td> {{ email }} </td>
+                        <td> {{ role }} </td>
+                        <td> {{ last_login}} </td>
+                    </tr> 
+                </table>
+            </center>
+    </div>
+</div>
+{% endblock %}
