@@ -356,7 +356,6 @@ class ProcessDataView(BasicView):
                     win_etl_output_file_path = Path(os.path.join(win_etl_file_path, customer_name))
                     dropbox_path = Path(os.path.join(win_etl_output_file_path, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
                     final_dropbox_path = PureWindowsPath(dropbox_path)
-                    print(final_dropbox_path)
                     csv_file_name = customer_name + "_Air_" + year + quarter + "_" + country + ".csv"
                     dest_csv_file_path = Path(os.path.join(final_dropbox_path, csv_file_name))
                     shutil.copy(src_csv_file_path, dest_csv_file_path)
