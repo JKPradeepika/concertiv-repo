@@ -1,5 +1,6 @@
 {
     "win_etl_output_files_path": "Dropbox (Concertiv)/Ve Arc Sharing/1. Customers",
+    "oneschema_air_path": "Raw TMC Data-Dev/OneSchema/air",
     "jet_departure_date": "05/01/2019",
     "sin_departure_date": "07/31/2019",
     "group_deals": ["JetBlue", "Qantas", "Turkish", "Singapore", "Emirates", "Cathay"],

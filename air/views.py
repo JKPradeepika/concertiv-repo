@@ -16,6 +16,7 @@ import datetime
 import jwt
 import csv
 import errno
+import shutil
 
 # Create your views here.
 class BasicView(View):
@@ -36,6 +37,12 @@ class BasicView(View):
         elt_file_path = data["win_etl_output_files_path"]
         win_etl_file_path = Path(os.path.join(user_path, elt_file_path))
         return win_etl_file_path
+    
+    # Function to return path for oneschema - air
+    def oneschema_air_path(self):
+        data = self.config_path()
+        oneschema_air_path = data["oneschema_air_path"]
+        return oneschema_air_path
 
     # Function which returns Year Half based on Quarter
     def half_year(self, quarter):
@@ -310,8 +317,9 @@ class LoadRawDataView(BasicView):
                     rows = list(reordered_dict.values())
                     final_rec.append(rows)
                 win_etl_file_path = self.base_path()
+                one_schema_air_path = self.oneschema_air_path()
                 win_etl_output_file_path = Path(os.path.join(win_etl_file_path, customer_name))
-                payload_path = Path(os.path.join(win_etl_output_file_path, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
+                payload_path = Path(os.path.join(win_etl_output_file_path, "3. Performance Reports", year, quarter, one_schema_air_path))
                 final_payload_path = PureWindowsPath(payload_path)
                 csv_file_name = customer_name + "_Air_" + year + quarter + "_" + country + ".csv"
                 csv_file_path = Path(os.path.join(final_payload_path, csv_file_name))
@@ -337,15 +345,22 @@ class ProcessDataView(BasicView):
             username = request.session.get('username')
             request.session.modified = True
             try:
-                csv_file_path = request.POST.get('csv_file_path')
+                src_csv_file_path = request.POST.get('csv_file_path')
                 customer_name = request.POST.get('customer_name')
                 travel_agency = request.POST.get('travel_agency')
                 country = request.POST.get('country')
                 year = request.POST.get('year')
                 quarter = request.POST.get('quarter')
-                new_file_path = ""
-                if os.path.exists(csv_file_path):
-                    df = pd.read_csv(csv_file_path)
+                if os.path.exists(src_csv_file_path):
+                    win_etl_file_path = self.base_path()
+                    win_etl_output_file_path = Path(os.path.join(win_etl_file_path, customer_name))
+                    dropbox_path = Path(os.path.join(win_etl_output_file_path, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
+                    final_dropbox_path = PureWindowsPath(dropbox_path)
+                    print(final_dropbox_path)
+                    csv_file_name = customer_name + "_Air_" + year + quarter + "_" + country + ".csv"
+                    dest_csv_file_path = Path(os.path.join(final_dropbox_path, csv_file_name))
+                    shutil.copy(src_csv_file_path, dest_csv_file_path)
+                    df = pd.read_csv(dest_csv_file_path)
 
                     # Get data from database tables
                     prefered_qs = Preference.objects.filter(customer_name = customer_name).values_list('prefered_airline')
@@ -521,12 +536,10 @@ class ProcessDataView(BasicView):
                     total_list.append("Total")
                     prism_airlines = ["American / Oneworld", "Delta / SkyTeam", "United / Star Alliance"]
                     quarter_year = quarter + " " + year
-                    win_etl_file_path = self.base_path()
-                    new_file_path = Path(os.path.join(win_etl_file_path, customer_name, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
                     prism_file_name = "Air PRISM & Other.xlsx"
                     csv_prism_file_name = "Air PRISM & Other.csv"
-                    file_path = Path(os.path.join(new_file_path, prism_file_name))
-                    csv_file_path = Path(os.path.join(new_file_path, csv_prism_file_name))
+                    file_path = Path(os.path.join(final_dropbox_path, prism_file_name))
+                    csv_file_path = Path(os.path.join(final_dropbox_path, csv_prism_file_name))
                     prism_airlines_discount = self.prism_flights_info(file_path, csv_file_path, quarter_year, prism_airlines)
                     prism_airlines_discount_list = [prism_airlines_discount[i * n:(i + 1) * n] for i in range((len(prism_airlines_discount) + n - 1) // n)]
                     for p in range(len(prism_airlines)):
@@ -621,9 +634,8 @@ class ProcessDataView(BasicView):
 
                     # Writing new column names into separate .xlsx file
                     win_etl_file_path = self.base_path()
-                    new_file_path = Path(os.path.join(win_etl_file_path, customer_name, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
                     new_file_name = customer_name + "_Air_" + quarter + year + "_"+ country +"_FinalData" + ".xlsx"
-                    file_name = Path(os.path.join(new_file_path, new_file_name))
+                    file_name = Path(os.path.join(final_dropbox_path, new_file_name))
                     df.to_excel(file_name, encoding='utf8', index=False)
                     
                     context = {'table': table, 'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'final_sheet': file_name}
@@ -634,18 +646,18 @@ class ProcessDataView(BasicView):
                 return render(request, self.error_url, context)
             finally:
                 # Deleting previous version of CSV - raw data file
-                os.chdir(new_file_path)
+                os.chdir(final_dropbox_path)
                 pre_csv_file = customer_name + "_Air_" + year + quarter + "_" + country + ".csv"
                 if os.path.exists(pre_csv_file):
                     os.remove(pre_csv_file)
 
                 # Deleting previous version of CSV - group mappings airline discounts file
-                csv_file_path = Path(os.path.join(new_file_path, "Group Airline Discounts Mapping.csv"))
+                csv_file_path = Path(os.path.join(final_dropbox_path, "Group Airline Discounts Mapping.csv"))
                 if os.path.exists(csv_file_path):
                     os.remove(csv_file_path)
 
                 # Deleting CSV file - Air Prism & Other files
-                air_prism_file = Path(os.path.join(new_file_path, "Air PRISM & Other.csv"))
+                air_prism_file = Path(os.path.join(final_dropbox_path, "Air PRISM & Other.csv"))
                 if os.path.exists(air_prism_file):
                     os.remove(air_prism_file)          
         else:
