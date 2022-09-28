@@ -1,9 +1,10 @@
+import re
 from django.shortcuts import render
 from django.views.generic import TemplateView, View
 
 from .forms import *
 from .models import *
-from django.contrib.auth.models import User
+from django.contrib import messages
 
 from CPR.settings.dev import OSC_CLIENT_ID, OSC_CLIENT_SECRET
 
@@ -230,12 +231,6 @@ class BasicView(View):
         return airline_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings
 
     
-class HomeView(TemplateView):
-    template_name = 'commons/home.html'
-    
-    def get(self, request, *args, **kwargs):
-        return render(request, self.template_name)
-
 class RawDataView(BasicView):
     form_class = RawdataForm
     template_name = 'air/raw_data.html'
@@ -245,16 +240,16 @@ class RawDataView(BasicView):
     def get(self, request, *args, **kwargs):
         if request.session.has_key('username'):
             username = request.session.get('username')
+            request.session.modified = True
             form = self.form_class
-            return render(request, self.template_name, {'form': form, 'username': username})
-        else:
-            message = "Unauthorized access. Please login again."
-            return render(request, self.error_url, context={'message': message})
+            return render(request, self.template_name, context={'form': form, 'username': username})
+        
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
         if request.session.has_key('username'):
             username = request.session.get('username')
+            request.session.modified = True
             try:
                 if form.is_valid():
                     customer_name = request.POST.get('customer_name')
@@ -292,6 +287,7 @@ class LoadRawDataView(BasicView):
     def post(self, request, *args, **kwargs):
         if request.session.has_key('username'):
             username = request.session.get('username')
+            request.session.modified = True
             osc_jwt_token = request.headers['Authorization']
             decode_jwt = jwt.decode(osc_jwt_token, OSC_CLIENT_SECRET, algorithms="HS256")
             if decode_jwt.get('iss') == OSC_CLIENT_ID:
@@ -339,6 +335,7 @@ class ProcessDataView(BasicView):
         # Reading CSV file
         if request.session.has_key('username'):
             username = request.session.get('username')
+            request.session.modified = True
             try:
                 csv_file_path = request.POST.get('csv_file_path')
                 customer_name = request.POST.get('customer_name')

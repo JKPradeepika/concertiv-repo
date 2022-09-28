@@ -129,9 +129,11 @@ hr.login{
   color: white;
   text-align: center;
 }
-.table.table-striped.table-borderless th{
+.table.table-striped.table-borderless.text-center > th{
   color: #154360;
   font-weight: bold;
+  padding-right: 0%;
+  padding-left: 30px;
 }
 h1{
   color: #154360;

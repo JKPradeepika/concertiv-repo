@@ -1,81 +1,92 @@
-<!doctype html>
 <html lang="en">
   <head>
     {% load static %}
-    <script src="{% static 'air/js/cpr.js' %}"></script>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Bootstrap CSS -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
     <link rel="shortcut icon" href="{% static 'air/images/favicon.ico'%}" type="image/x-icon" />
     <link rel="stylesheet" href="{% static 'air/css/cpr.css' %}" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.8.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://d3ah8o189k1llu.cloudfront.net/oneschema-importer-latest.min.js"></script>
+    <script src="{% static 'air/js/cpr.js' %}"></script>
     <title>Concertiv | CPR</title>
   </head>
   <body>
-    <div class="container-fluid">
-      <div class="row flex-nowrap">
-          <div class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 side-color">
-              <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 min-vh-100">
-                  {% if user.is_authenticated %}
-                      <div class="dropdown">
-                          <button class="btn btn-primary dropdown-toggle align-items-center" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                              Hi, {{ username }}
-                          </button>
-                          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                              <li><a class="dropdown-item" href="{% url 'superuser:logout' %}">Logout</a></li>
-                          </ul>
-                      </div>
-                  {% endif %} 
-                  <div class="sidebar">
-                      <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="menu">
-                          <li class="nav-item">
-                              <a href="{% url 'superuser:profile' %}" class="nav-link align-middle px-0">
-                                  <br><br><br><br><br><br>
-                                  <span class="ms-1 d-none d-sm-inline side-color">&nbsp;Profile</span>
-                              </a>
-                          </li>
-                          <li>
-                              <a href="#submenu1" data-bs-toggle="collapse" class="nav-link px-0 align-middle">
-                                  <span class="ms-1 d-none d-sm-inline side-color">&nbsp;CPR Users</span> </a>
-                              <ul class="collapse nav flex-column ms-1" id="submenu1" data-bs-parent="#menu">
-                                  <li class="w-100">
-                                      <a href="#" class="nav-link px-0"> <span class="d-none d-sm-inline side-color">&nbsp;&nbsp;&nbsp;&nbsp;All</span></a>
-                                  </li>
-                                  <li>
-                                      <a href="{% url 'superuser:create_user' %}" class="nav-link px-0"> <span class="d-none d-sm-inline side-color">&nbsp;&nbsp;&nbsp;&nbsp;Create</span></a>
-                                  </li>
-                                  <li>
-                                      <a href="#" class="nav-link px-0"> <span class="d-none d-sm-inline side-color">&nbsp;&nbsp;&nbsp;&nbsp;Delete</span></a>
-                                  </li>
-                                  <li>
-                                      <a href="#" class="nav-link px-0"> <span class="d-none d-sm-inline side-color">&nbsp;&nbsp;&nbsp;&nbsp;Update</span></a>
-                                  </li>
-                              </ul>
-                          </li>
-                      </ul>
-                  </div>
-              </div>
-          </div>
-          <div class="col py-3">
-            <br><br><br><br><br><br>
-              {% block content %} {% endblock %}
-          </div>
+    <nav class="navbar navbar-expand-sm navbar-dark fixed-top" style="background-color:#154360;" id="main_navbar">
+      <div class="container-fluid">
+        <a href="{% url 'superuser:home'%}" class="navbar-brand">
+          <img src="{% static 'air/images/logo.png' %}" width="250" height="28" alt="Concertiv - Logo">
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="nav navbar-nav navbar-center">
+            <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="{% url 'superuser:home'%}" style="padding-left:250px;">Home</a>
+              </li>
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="{% url 'superuser:profile'%}">
+                Profile</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown">
+                Permissions
+              </a>
+              <ul class="dropdown-menu">
+                <li class="nav-item dropdown">
+                  <a
+                    class="dropdown-item dropdown-toggle"
+                    href="#"
+                    role="button"
+                    style="background-color: #154360; color: #fff;"
+                    data-bs-toggle="dropdown">
+                    Users
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" >All</a></li>
+                    <li><a class="dropdown-item" href="{% url 'superuser:create_cpr_user' %}" >Create</a></li>
+                    <li><a class="dropdown-item" href="#" >Delete</a></li>
+                    <li><a class="dropdown-item" href="#" >Update</a></li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      {% if user.is_authenticated %}
+       <div class="dropdown">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+            Hi, {{ username }}
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+            <li><a class="dropdown-item" href="{% url 'superuser:profile' %}">Profile</a></li>
+            <li><a class="dropdown-item" href="{% url 'superuser:logout' %}">Logout</a></li>
+          </ul>
+        </div>
+      {% else %}
+          <a class="signin" href="{% url 'superuser:login' %}">Sign In</a>
+      {% endif %}
       </div>
-  </div>
-    
-
-  <!-- Optional JavaScript; choose one of the two! -->
-
-    <!-- Option 1: Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-    
-    <!-- Option 2: Separate Popper and Bootstrap JS -->
-    <!--
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
-    -->
+    </nav>
+    <script>
+      new bootnavbar();
+    </script>
+    <br />
+    {% block content %} {% endblock %}
   </body>
 </html>

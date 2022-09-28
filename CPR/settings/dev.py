@@ -21,3 +21,13 @@ DATABASES = {
         'PORT': config('DB_PORT'),
     }
 }
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_HOST = config('EMAIL_HOST')
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = False
+# DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+# EMAIL_RECIPIENT_ADDRESS = config('EMAIL_RECIPIENT_ADDRESS')
