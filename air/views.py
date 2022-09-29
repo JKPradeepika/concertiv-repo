@@ -7,6 +7,7 @@ from .models import *
 from django.contrib import messages
 
 from CPR.settings.dev import OSC_CLIENT_ID, OSC_CLIENT_SECRET
+from CPR.settings.base import BASE_DIR
 
 from pathlib import Path, PureWindowsPath
 import os
@@ -250,6 +251,9 @@ class RawDataView(BasicView):
             request.session.modified = True
             form = self.form_class
             return render(request, self.template_name, context={'form': form, 'username': username})
+        else:
+            message = "Unauthorized access. Please login again."
+            return render(request, self.error_url, context={'message': message})
         
 
     def post(self, request, *args, **kwargs):
@@ -658,7 +662,10 @@ class ProcessDataView(BasicView):
                 # Deleting CSV file - Air Prism & Other files
                 air_prism_file = Path(os.path.join(final_dropbox_path, "Air PRISM & Other.csv"))
                 if os.path.exists(air_prism_file):
-                    os.remove(air_prism_file)          
+                    os.remove(air_prism_file)
+                    
+                # Moving back to project directory
+                os.chdir(BASE_DIR)
         else:
             message = "Unauthorized access. Please login again."
             return render(request, self.error_url, context={'message': message})

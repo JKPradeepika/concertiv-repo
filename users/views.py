@@ -84,6 +84,9 @@ class CreateUser(View):
             request.session.modified = True
             form = self.form_class
             return render(request, self.template_name, context={'form': form, 'username': username})
+        else:
+            message = "Unauthorized access. Please login again."
+            return render(request, self.error_url, context={'message': message})
     
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
