@@ -1,0 +1,24 @@
+{% extends 'commons/base.html'%}
+{% load static %}
+{% block content %}
+<br><br><br><br><br><br>
+    <div class="row">
+      <div class="center">
+        <form method="post">
+          <div class="container-fluid text-center">
+            <img src="{% static 'air/images/icon.png' %}" width="35" height="35" alt="Concertiv - Logo"><br><br>
+            <h3>Logged out</h3>
+            <hr class="login">
+              {% csrf_token %}
+              <center>
+                <table class="raw_data_table">
+                  <br>
+                  Thank you for signing in your account. Please sign in again <a href="{%url 'superuser:login'%}">here</a>
+                </table>
+              </center>
+              <br>
+            </div>
+          </form>
+      </div> 
+  </div>
+{% endblock %}

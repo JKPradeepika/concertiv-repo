@@ -12,11 +12,17 @@ from CPR.settings import dev
 
 class HomeView(TemplateView):
     template_name = 'commons/home.html'
+    
+    def get(self, request, *args, **kwargs):
+        if request.session.has_key('username'):
+            username = request.session.get('username')
+            request.session.modified = True
+            return render(request, self.template_name, context={'username': username})
 
 
 class AdminLogin(LoginView):
     form_class = AdminLoginForm
-    template_name = 'users/admin_login.html'
+    template_name = 'users/login.html'
     success_url = 'commons/home.html'
     
     def get(self, request, *args, **kwargs):
@@ -29,17 +35,17 @@ class AdminLogin(LoginView):
         password = request.POST.get('password')
         username = str(User.objects.get(username=username))
         user = authenticate(username=username, password=password)
-        if not user:
-            message = "Unauthorized access. Please login again."
-            return render(request, self.error_url, context={'message': message})
         if user is not None:
             login(request, user)
             request.session['username'] = username
             return render(request, self.success_url, context={'username': username})
+        elif not user:
+            message = "Unauthorized access. Please login again."
+            return render(request, self.error_url, context={'message': message})
         return render(request, self.template_name, context={'form': form})
 
 class AdminLogout(LogoutView):
-    template_name = "commons/home.html"
+    template_name = "users/logout.html"
     
     def post(self, request, *args, **kwargs):
         logout(request)

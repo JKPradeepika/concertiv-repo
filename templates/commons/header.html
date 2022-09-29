@@ -38,7 +38,7 @@
             </li>
             <li class="nav-item dropdown">
               <a
-                class="nav-link dropdown-toggle"
+                class="nav-link dropdown-toggle active"
                 href="#"
                 role="button"
                 data-bs-toggle="dropdown">
@@ -70,6 +70,33 @@
             </li>
             <li class="nav-item">
               <a class="nav-link active" aria-current="page" href="#">Technology</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown">
+                Operations
+              </a>
+              <ul class="dropdown-menu">
+                <li class="nav-item dropdown">
+                  <a
+                    class="dropdown-item dropdown-toggle"
+                    href="#"
+                    role="button"
+                    style="background-color: #154360; color: #fff;"
+                    data-bs-toggle="dropdown">
+                    Users
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" >All</a></li>
+                    <li><a class="dropdown-item" href="{% url 'superuser:create_cpr_user' %}" >Create</a></li>
+                    <li><a class="dropdown-item" href="#" >Delete</a></li>
+                    <li><a class="dropdown-item" href="#" >Update</a></li>
+                  </ul>
+                </li>
+              </ul>
             </li>
           </ul>
         </div>
