@@ -41,8 +41,10 @@ class BasicView(View):
     
     # Function to return path for oneschema - air
     def oneschema_air_path(self):
+        username = os.getlogin()
+        user_path = Path(os.path.join("C:/Users", username))
         data = self.config_path()
-        oneschema_air_path = data["oneschema_air_path"]
+        oneschema_air_path = Path(os.path.join(user_path, data["oneschema_air_path"]))
         return oneschema_air_path
 
     # Function which returns Year Half based on Quarter
@@ -320,13 +322,10 @@ class LoadRawDataView(BasicView):
                     reordered_dict = {k: rec[k] for k in template_key_headers}
                     rows = list(reordered_dict.values())
                     final_rec.append(rows)
-                win_etl_file_path = self.base_path()
                 one_schema_air_path = self.oneschema_air_path()
-                win_etl_output_file_path = Path(os.path.join(win_etl_file_path, customer_name))
-                payload_path = Path(os.path.join(win_etl_output_file_path, "3. Performance Reports", year, quarter, one_schema_air_path))
-                final_payload_path = PureWindowsPath(payload_path)
+                final_oneschema_payload_path = PureWindowsPath(one_schema_air_path)
                 csv_file_name = customer_name + "_Air_" + year + quarter + "_" + country + ".csv"
-                csv_file_path = Path(os.path.join(final_payload_path, csv_file_name))
+                csv_file_path = Path(os.path.join(final_oneschema_payload_path, csv_file_name))
                 with open(csv_file_path, 'w', newline='') as csv_file:
                     csv_writer = csv.writer(csv_file)
                     csv_writer.writerow(column_headers)

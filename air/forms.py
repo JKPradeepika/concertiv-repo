@@ -1,5 +1,4 @@
 from django import forms
-from .models import Preference
 
 
 class RawdataForm(forms.Form):
@@ -11,10 +10,6 @@ class RawdataForm(forms.Form):
     
     def clean_customer_name(self):
         customer_name = self.cleaned_data.get("customer_name")
-        customer_name_rs = Preference.objects.get(customer_name=customer_name)
-        customer_name_from_model = str(customer_name_rs)
-        if customer_name != customer_name_from_model:
-            raise forms.ValidationError("Incorrect Customer Name %s. Please enter correct Customer Name" % customer_name)
         for i in range(len(customer_name)):
             if ((customer_name[i] >= 'A' and customer_name[i] <= 'Z') or (customer_name[i] >= 'a' and customer_name[i] <= 'z') or customer_name[i] == "&") == False:
                 raise forms.ValidationError("Only alphabets and ampersands are allowed. Please enter a valid customer name.")
