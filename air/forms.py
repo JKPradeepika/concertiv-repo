@@ -2,11 +2,11 @@ from django import forms
 
 
 class RawdataForm(forms.Form):
-    travel_agency = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'enter travel agency', 'text-align': 'center'}), label='Agency', max_length=50, required=True)
-    customer_name = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'enter client name', 'text-align': 'center'}), label='Client Name', max_length=50, required=True)
-    country = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'enter country', 'text-align': 'center'}), label='Country', max_length=2, required=True)
-    quarter = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'enter quarter', 'text-align': 'center'}), label='Quarter', max_length=2, required=True)
-    year = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'enter year', 'text-align': 'center'}), label='Year', max_length=4, required=True)
+    travel_agency = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Enter travel agency', 'text-align': 'center'}), label='Agency', max_length=50, required=True)
+    customer_name = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Enter client name', 'text-align': 'center'}), label='Client Name', max_length=50, required=True)
+    country = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Enter country', 'text-align': 'center'}), label='Country', max_length=2, required=True)
+    quarter = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Enter quarter', 'text-align': 'center'}), label='Quarter', max_length=2, required=True)
+    year = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Enter year', 'text-align': 'center'}), label='Year', max_length=4, required=True)
     
     def clean_customer_name(self):
         customer_name = self.cleaned_data.get("customer_name")

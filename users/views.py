@@ -12,12 +12,16 @@ from CPR.settings import dev
 
 class HomeView(TemplateView):
     template_name = 'commons/home.html'
+    error_url = "commons/error.html"
     
     def get(self, request, *args, **kwargs):
         if request.session.has_key('username'):
             username = request.session.get('username')
             request.session.modified = True
             return render(request, self.template_name, context={'username': username})
+        else:
+            message = "Unauthorized access. Please login again."
+            return render(request, self.error_url, context={'message': message})
 
 
 class AdminLogin(LoginView):
