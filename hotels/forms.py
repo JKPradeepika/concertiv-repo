@@ -1,7 +1,7 @@
 from django import forms
 
 
-class AirRawdataForm(forms.Form):
+class HotelsRawdataForm(forms.Form):
     travel_agency = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Enter travel agency', 'text-align': 'center'}), label='Agency', max_length=50, required=True)
     customer_name = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Enter client name', 'text-align': 'center'}), label='Client Name', max_length=50, required=True)
     country = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control form-control-sm', 'placeholder':'Enter country', 'text-align': 'center'}), label='Country', max_length=2, required=True)

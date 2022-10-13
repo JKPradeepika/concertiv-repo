@@ -3,12 +3,13 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth import authenticate, login, logout
 from django.views.generic.edit import FormView
 from django.views.generic import View, TemplateView
+from django.core.mail import EmailMessage
 
 from .forms import *
 from django.contrib.auth.models import User
-from django.core.mail import EmailMessage
 from CPR.settings import dev
-
+from django.core import mail
+import smtplib
 
 class HomeView(TemplateView):
     template_name = 'commons/home.html'
@@ -104,16 +105,17 @@ class CreateUser(View):
                     user = User.objects.create_user(username=cpr_user_name, email=cpr_user_email)
                     user.is_active = False
                     user.save()
-                    subject = 'Test Email'
-                    body = 'Test'
-                    email = EmailMessage(
-                        subject,
-                        body,
-                        dev.EMAIL_HOST_USER,
-                        [cpr_user_email],
-                    )
-                    email.send(fail_silently=False)
                     message = 'User created successfully'
+                    msg = EmailMessage()
+                    msg['Subject'] = 'Test Email'
+                    msg['From'] = 'CPR Admin'
+                    msg['To'] =  cpr_user_email                   
+                    
+                    server = smtplib.SMTP_SSL('smtp.office365.com', 587)
+                    server.login('CPR-Admin@concertiv.com', 'Nar08551')
+                    server.send_message(msg)
+                    server.quit()
+                    
                     return render(request, self.success_url, context={'message': message})
             else:
                 form = self.form_class(request.POST)

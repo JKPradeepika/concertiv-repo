@@ -1,42 +1,22 @@
-function bootnavbar(options) {
-  const defaultOption = {
-    selector: "main_navbar",
-    animation: true,
-    animateIn: "animate__fadeIn",
-  };
+$(document).ready(function() {
+  $(document).on('click', '.dropdown-menu', function (e) {
+    e.stopPropagation();
+  });
 
-  const bnOptions = { ...defaultOption, ...options };
-
-  init = function () {
-    var dropdowns = document
-      .getElementById(bnOptions.selector)
-      .getElementsByClassName("dropdown");
-
-    Array.prototype.forEach.call(dropdowns, (item) => {
-      //add animation
-      if (bnOptions.animation) {
-        const element = item.querySelector(".dropdown-menu");
-        element.classList.add("animate__animated");
-        element.classList.add(bnOptions.animateIn);
-      }
-
-      //hover effects
-      item.addEventListener("mouseover", function () {
-        this.classList.add("show");
-        const element = this.querySelector(".dropdown-menu");
-        element.classList.add("show");
-      });
-
-      item.addEventListener("mouseout", function () {
-        this.classList.remove("show");
-        const element = this.querySelector(".dropdown-menu");
-        element.classList.remove("show");
-      });
+  // make it as accordion for smaller screens
+  if ($(window).width() < 992) {
+    $('.dropdown-menu a').click(function(e){
+      e.preventDefault();
+        if($(this).next('.submenu').length){
+          $(this).next('.submenu').toggle();
+        }
+        $('.dropdown').on('hide.bs.dropdown', function () {
+       $(this).find('.submenu').hide();
+    })
     });
-  };
-
-  init();
 }
+
+});
 
 function getCookie(name) {
   let cookieValue = null;
@@ -57,7 +37,7 @@ const csrftoken = getCookie('csrftoken');
 
 const iFrame_details = {
   clientId: "3a21d9c1-bd7a-4ff1-9ccf-0700e40a57f8",
-  templateKey: "air_file",
+  templateKey: "",
   webhookKey: "",
   userJwt: "",
   config: {
@@ -67,8 +47,18 @@ const iFrame_details = {
 
 let importer;
 
-function launchOneSchema(jwt_token) {
+function launchOneSchema(jwt_token, domain_name, travel_type) {
   iFrame_details.userJwt = jwt_token;
+  if (domain_name == "travel" && travel_type == "air"){
+    iFrame_details.templateKey = "air_file";
+  }
+  else if (domain_name == "travel" && travel_type == "hotels"){
+    iFrame_details.templateKey = "hotel_file";
+  }
+  else if (domain_name == "travel" && travel_type == "cars"){
+    iFrame_details.templateKey = "cars_file";
+  }
+  
   importer = oneschemaImporter(iFrame_details);
   importer.launch()
 

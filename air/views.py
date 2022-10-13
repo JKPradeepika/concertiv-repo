@@ -1,6 +1,5 @@
 from django.shortcuts import render
-from django.views.generic import TemplateView, View
-from numpy import NaN
+from django.views.generic import View
 
 from .forms import *
 from .models import *
@@ -242,7 +241,7 @@ class BasicView(View):
 
     
 class RawDataView(BasicView):
-    form_class = RawdataForm
+    form_class = AirRawdataForm
     template_name = 'air/raw_data.html'
     success_url = 'air/get_raw_data.html'
     error_url = 'commons/error.html'
@@ -260,6 +259,8 @@ class RawDataView(BasicView):
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
+        domain = "travel"
+        travel_type = "air"
         if request.session.has_key('username'):
             username = request.session.get('username')
             request.session.modified = True
@@ -281,7 +282,7 @@ class RawDataView(BasicView):
                         'country': country
                     }
                     encode_jwt = jwt.encode(payload = data, key=OSC_CLIENT_SECRET, algorithm='HS256')
-                    context = {'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'travel_agency': travel_agency, 'encode_jwt': encode_jwt }
+                    context = {'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'travel_agency': travel_agency, 'encode_jwt': encode_jwt, 'domain': domain, 'travel_type': travel_type}
                     return render(request, self.success_url, context)
                 else:
                     form = self.form_class(request.POST)
