@@ -20,7 +20,7 @@
 				<img src="{% static 'air/images/logo_1.png' %}" width="250" height="28" alt="Concertiv - Logo">
 			</a>
 		</div>
-	</header> <!-- section-header.// -->
+	</header>
 	<div class="container">
 		<nav class="navbar navbar-expand-lg navbar-dark nav-bg-color">
 			<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#main_nav">
@@ -32,7 +32,7 @@
 					<li class="nav-item active"> <a class="nav-link" href="#">Insurance </a> </li>
 					<li class="nav-item active"> <a class="nav-link" href="#">Market Data </a> </li>
 					<li class="nav-item active"> <a class="nav-link" href="#">Technology </a> </li>
-					<li class="nav-item dropdown">
+					<li class="nav-item dropdown active">
 						<a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">  Travel  </a>
 						<ul class="dropdown-menu">
 							<li><a class="dropdown-item" href="#"> Airlines &raquo </a>
@@ -43,7 +43,7 @@
 							<li><a class="dropdown-item" href="#"> Cars </a></li>
 							<li><a class="dropdown-item" href="#"> Hotels &raquo </a>
 								<ul class="submenu dropdown-menu">
-									<li><a class="dropdown-item" href="">CPR Process &raquo </a> 
+									<li><a class="dropdown-item" href="#">CPR Process &raquo </a> 
 										<ul class="submenu dropdown-menu">
 											<li><a class="dropdown-item" href="{% url 'hotels:raw_data' %}">Fuzzy-Match</a></li>
 											<li><a class="dropdown-item" href="">Saving Calculation</a></li>
@@ -56,7 +56,7 @@
 				</ul>
 				<ul class="navbar-nav ml-auto">
 					{% if user.is_authenticated %}
-						<li class="nav-item dropdown">
+						<li class="nav-item dropdown active">
 							<a class="nav-link  dropdown-toggle" href="#" data-toggle="dropdown"> Hi, {{ username }}</a>
 							<ul class="dropdown-menu dropdown-menu-right">
 							<li><a class="dropdown-item" href="{% url 'superuser:profile' %}"> Profile </a></li>
@@ -69,7 +69,7 @@
 							</ul>
 						</li>
 					{% else %}
-						<li class="nav-item"><a class="nav-link" href="{% url 'superuser:login' %}"> Sign In </a></li>
+						<li class="nav-item active"><a class="nav-link" href="{% url 'superuser:login' %}"> Sign In </a></li>
 					{% endif %}
 				</ul>
 			</div>

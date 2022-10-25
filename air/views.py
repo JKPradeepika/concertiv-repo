@@ -102,7 +102,7 @@ class BasicView(View):
         return jet_tour_code, jet_ticket_designator, emi_tour_code, emi_ticket_designator, tur_tour_code, tur_ticket_designator, qan_tour_code, sin_tour_code, sin_ticket_designator
 
     # Function to read Group Mappings for Preferred Savings Classifiers
-    def read_group_mappings(self, customer_name, quarter, year):
+    def read_group_mappings(self):
         username = os.getlogin()
         user_path = Path(os.path.join("C:/Users", username))
         data = self.config_path()
@@ -139,8 +139,8 @@ class BasicView(View):
         return discount
 
     # Function to check whether the tour code and ticket designator are available or not to determine discount
-    def check_tour_code_and_ticket_designator(self, df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, index_list, tour_code, ticket_designator):
-        group = self.read_group_mappings(customer_name, quarter, year)
+    def check_tour_code_and_ticket_designator(self, df, discount, savings_tour_code, savings_ticket_designator, index_list, tour_code, ticket_designator):
+        group = self.read_group_mappings()
         reference_list = group["Reference"].tolist()
         discount_contract_classifier = df["Savings Contract Classifier"].tolist()
         discount_reference_list, indices_list = [], []
@@ -279,7 +279,9 @@ class RawDataView(BasicView):
                         'quarter': quarter, 
                         'year': year,
                         'travel_agency': travel_agency,
-                        'country': country
+                        'country': country,
+                        'domain': domain,
+                        'travel_type': travel_type
                     }
                     encode_jwt = jwt.encode(payload = data, key=OSC_CLIENT_SECRET, algorithm='HS256')
                     context = {'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'travel_agency': travel_agency, 'encode_jwt': encode_jwt, 'domain': domain, 'travel_type': travel_type}
@@ -310,6 +312,8 @@ class LoadRawDataView(BasicView):
                 year = decode_jwt.get('year')
                 country = decode_jwt.get('country')
                 travel_agency = decode_jwt.get('travel_agency')
+                domain = decode_jwt.get('domain')
+                travel_type = decode_jwt.get('travel_type')
                 payload = json.loads(request.body.decode('utf-8'))
                 column_headers, template_key_headers = [], []
                 for col in payload.get('columns'):
@@ -325,7 +329,7 @@ class LoadRawDataView(BasicView):
                     final_rec.append(rows)
                 one_schema_air_path = self.oneschema_air_path()
                 final_oneschema_payload_path = PureWindowsPath(one_schema_air_path)
-                csv_file_name = customer_name + "_Air_" + quarter + year + "_" + country + ".csv"
+                csv_file_name = customer_name + "_" + travel_type + "_" +quarter + year + "_" + country + ".csv"
                 csv_file_path = Path(os.path.join(final_oneschema_payload_path, csv_file_name))
                 with open(csv_file_path, 'w', newline='') as csv_file:
                     csv_writer = csv.writer(csv_file)
@@ -348,13 +352,13 @@ class ProcessDataView(BasicView):
         if request.session.has_key('username'):
             username = request.session.get('username')
             request.session.modified = True
+            src_csv_file_path = request.POST.get('csv_file_path')
+            customer_name = request.POST.get('customer_name')
+            travel_agency = request.POST.get('travel_agency')
+            country = request.POST.get('country')
+            year = request.POST.get('year')
+            quarter = request.POST.get('quarter')
             try:
-                src_csv_file_path = request.POST.get('csv_file_path')
-                customer_name = request.POST.get('customer_name')
-                travel_agency = request.POST.get('travel_agency')
-                country = request.POST.get('country')
-                year = request.POST.get('year')
-                quarter = request.POST.get('quarter')
                 if os.path.exists(src_csv_file_path):
                     win_etl_file_path = self.base_path()
                     win_etl_output_file_path = Path(os.path.join(win_etl_file_path, customer_name))
@@ -500,15 +504,15 @@ class ProcessDataView(BasicView):
                     # Checking tour code and ticket designator for Non Prism Flights
                     for i in range(len(savings_alliance_classifier)):
                         if savings_alliance_classifier[i] == "JetBlue":
-                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, jet_indexes, jet_tour_code, jet_ticket_designator)
+                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, jet_indexes, jet_tour_code, jet_ticket_designator)
                         elif savings_alliance_classifier[i] == "Emirates":
-                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, emi_indexes, emi_tour_code, emi_ticket_designator)
+                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, emi_indexes, emi_tour_code, emi_ticket_designator)
                         elif savings_alliance_classifier[i] == "Turkish":
-                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, tur_indexes, tur_tour_code, tur_ticket_designator)
+                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, tur_indexes, tur_tour_code, tur_ticket_designator)
                         elif savings_alliance_classifier[i] == "Qantas":
-                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, qan_indexes, qan_tour_code, "nan")
+                            discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, qan_indexes, qan_tour_code, "nan")
                         elif savings_alliance_classifier[i] == "Singapore":
-                                discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, customer_name, quarter, year, sin_indexes, sin_tour_code, sin_ticket_designator)
+                                discount, savings_tour_code, savings_ticket_designator = self.check_tour_code_and_ticket_designator(df, discount, savings_tour_code, savings_ticket_designator, sin_indexes, sin_tour_code, sin_ticket_designator)
                     
                     df["Contract Classifier Tour Code"] = [tc for tc in savings_tour_code]
                     df["Contract Classifier Ticket Designator"] = [td for td in savings_ticket_designator]
@@ -561,7 +565,7 @@ class ProcessDataView(BasicView):
                     context = {'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'final_sheet': file_name}
                     return render(request, self.template_name, context=context)
             except FileNotFoundError:
-                message = ("Unable to find CSV file in specified directory: %s" % csv_file_path)
+                message = ("Unable to find CSV file in specified directory: %s" % src_csv_file_path)
                 context = {'message': message}
                 return render(request, self.error_url, context)
             finally:

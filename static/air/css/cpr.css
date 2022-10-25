@@ -52,6 +52,7 @@ footer {
   width: 65%;
   padding-top: 30px;
   color: #0e2c3f;
+  font-weight: bold;
   text-align: center;
 }
 @media (min-width: 992px){

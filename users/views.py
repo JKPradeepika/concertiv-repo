@@ -8,8 +8,10 @@ from django.core.mail import EmailMessage
 from .forms import *
 from django.contrib.auth.models import User
 from CPR.settings import dev
-from django.core import mail
 import smtplib
+from email.message import EmailMessage
+from django.core.mail import send_mail
+from django.core import mail
 
 class HomeView(TemplateView):
     template_name = 'commons/home.html'
@@ -31,8 +33,13 @@ class AdminLogin(LoginView):
     success_url = 'commons/home.html'
     
     def get(self, request, *args, **kwargs):
-        form = self.form_class
-        return render(request, self.template_name, context={'form': form})
+        if request.session.has_key('username'):
+            username = request.session.get('username')
+            request.session.modified = True
+            return render(request, self.success_url, context={'username': username})
+        else:
+            form = self.form_class
+            return render(request, self.template_name, context={'form': form})
     
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
@@ -105,17 +112,18 @@ class CreateUser(View):
                     user = User.objects.create_user(username=cpr_user_name, email=cpr_user_email)
                     user.is_active = False
                     user.save()
+                    
+                    connection = mail.get_connection()
+                    connection.open()
+                    email = mail.EmailMessage(
+                        'CPR Account Creation',
+                        'Body goes here',
+                        dev.EMAIL_HOST_USER,
+                        ['pradeepika.junapudi@vearc.com'],
+                        connection=connection,
+                    )
+                    email.send()
                     message = 'User created successfully'
-                    msg = EmailMessage()
-                    msg['Subject'] = 'Test Email'
-                    msg['From'] = 'CPR Admin'
-                    msg['To'] =  cpr_user_email                   
-                    
-                    server = smtplib.SMTP_SSL('smtp.office365.com', 587)
-                    server.login('CPR-Admin@concertiv.com', 'Nar08551')
-                    server.send_message(msg)
-                    server.quit()
-                    
                     return render(request, self.success_url, context={'message': message})
             else:
                 form = self.form_class(request.POST)

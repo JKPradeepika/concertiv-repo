@@ -17,9 +17,9 @@ class UserSignupForm(forms.Form):
         elif (username[1:] >= 'a' and username[1:] <= 'z') == False:
             raise forms.ValidationError("Please enter a valid username")
     
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        regex = '^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
-        if not re.search(regex, email):
-            raise forms.ValidationError("Please enter a valid email address")
+    # def clean_email(self):
+    #     email = self.cleaned_data.get('email')
+    #     regex = '^[a-z0-9]+[\._]?[a-z0-9]+[@]\w[a-z]+[.]\w{2,3}$'
+    #     if not re.search(regex, email):
+    #         raise forms.ValidationError("Please enter a valid email address")
     

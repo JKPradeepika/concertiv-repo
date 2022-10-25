@@ -11,5 +11,6 @@
         "Turkish": {"tur_tour_code": "CCC79751", "tur_ticket_designator": "FS09"},
         "Qantas": {"qan_tour_code": "BOT"},
         "Singapore": {"sin_tour_code": "A74PH", "sin_ticket_designator": "CDM3"}
-    }
+    },
+    "oneschema_hotels_path": "Dropbox (Concertiv)/Ve Arc Sharing/CPR/OneSchema/hotels"
 }

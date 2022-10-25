@@ -1,8 +1,15 @@
-{% load static %}
-<link rel="stylesheet" href="{% static 'air/css/cpr.css' %}" />
-{% block content %}
-<br><br><br><br><br><br>
-    <div class="render_field">
-        {{ message }}
-    </div>
-{% endblock %}
+<html lang="en">
+  <head>
+    {% load static %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="{% static 'air/css/cpr.css' %}" />
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+  </head>
+  <body>
+    <center>
+        <br><br><br><br>
+        <h3 class="data">{{ message }}</h3>
+    </center>
+  </body>
+</html>
