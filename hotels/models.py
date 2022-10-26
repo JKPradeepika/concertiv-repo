@@ -1,7 +1,7 @@
 from django.db import models
 
 # Create your models here.
-class Gds_codes(models.Model):
+class Gdscodes(models.Model):
     concertiv_id = models.IntegerField(primary_key=True)
     chain_code = models.CharField(max_length=2)
     chain_name = models.CharField(max_length=255)

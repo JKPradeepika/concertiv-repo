@@ -7,6 +7,7 @@
     <form method="post" action="graphs">
         {% csrf_token %}
         <table class="table table-striped table-borderless text-center">
+            <caption>{{ customer_name }}</caption>
             <th>Preferred Carriers</th> 
             <th>Q1 2022 Pre-Discount Cost</th>
             <th>Q1 2022 Actual Spend</th> 

@@ -5,17 +5,15 @@
 <div class="container-fluid text-center">
   <img src="{% static 'air/images/icon.png' %}" width="35" height="35" alt="Concertiv - Logo"><br><br>
   <form method="post">
-    <center>
     <h3>Sign In</h3>
     <hr class="login">
       {% csrf_token %}
-        <table class="data">
-          <br>
+        <table class=" center data">
+          <caption></caption>
           {{ form.as_table }}
         </table>
       <br>
       <button type="submit" class="btn btn-primary">Sign In</button>
-    </center>
   </form>
 </div>
 {% endblock %}

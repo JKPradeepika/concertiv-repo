@@ -55,6 +55,10 @@ footer {
   font-weight: bold;
   text-align: center;
 }
+.center{
+  margin-left: auto;
+  margin-right: auto;
+}
 @media (min-width: 992px){
   .dropdown-menu .dropdown-toggle:after{
     border-top: .3em solid transparent;

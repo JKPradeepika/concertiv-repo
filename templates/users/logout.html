@@ -5,15 +5,13 @@
 <div class="container-fluid text-center">
   <img src="{% static 'air/images/icon.png' %}" width="35" height="35" alt="Concertiv - Logo"><br><br>
   <form method="post">
-    <center>
     <h3>You have logged out successfully</h3>
     <hr class="login">
       {% csrf_token %}
-        <table class="data">
+        <p class="center data">
           <br>
           To sign in again, click <a href="{%url 'superuser:login'%}">here</a>
-        </table>
-    </center>
+        </p>
   </form>
 </div>
 {% endblock %}

@@ -3,17 +3,14 @@
 <br><br><br><br>
 <div class="container-fluid text-center">
   <form action="raw_data" method="post">
-    <center>
       <h3 class="data">Enter Customer Details for CPR - Airlines</h3>
       <hr class="login">
         {% csrf_token %}
-          <br>
-            <table class="data">
+            <table class="center data">
+              <caption>Customer Details</caption>
                 {{ form.as_table }}
             </table>
-            <br>
-            <button type="submit" class="btn btn-primary">Submit</button>
-    </center>
+          <button type="submit" class="btn btn-primary">Submit</button>
   </form>
 </div> 
 {% endblock %}

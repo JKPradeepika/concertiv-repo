@@ -3,17 +3,15 @@
 <br><br><br><br>
 <div class="container-fluid text-center">
   <form method="post">
-    <center>
     <h3>Create CPR User</h3>
     <hr class="login">
       {% csrf_token %}
-        <table class="data">
-          <br>
+        <table class="center data">
+          <caption></caption>
           {{ form.as_table }}
         </table>
       <br>
       <button type="submit" class="btn btn-primary">Submit</button>
-    </center>
   </form>
 </div>
 {% endblock %}

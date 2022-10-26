@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.views.generic import View
 
-from .forms import *
-from .models import *
+from .forms import AirRawdataForm
+from .models import Airline, Airport, Alliance
 
 from CPR.settings.dev import OSC_CLIENT_ID, OSC_CLIENT_SECRET
 from CPR.settings.base import BASE_DIR
@@ -312,7 +312,6 @@ class LoadRawDataView(BasicView):
                 year = decode_jwt.get('year')
                 country = decode_jwt.get('country')
                 travel_agency = decode_jwt.get('travel_agency')
-                domain = decode_jwt.get('domain')
                 travel_type = decode_jwt.get('travel_type')
                 payload = json.loads(request.body.decode('utf-8'))
                 column_headers, template_key_headers = [], []
