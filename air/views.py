@@ -78,6 +78,7 @@ class BasicView(View):
 
     # Function to return tour code and ticket designator for all Prism airlines based on savings contract classifier
     def tour_code_and_ticket_designator(self):
+        jet_tour_code, jet_ticket_designator, emi_tour_code, emi_ticket_designator, tur_tour_code, tur_ticket_designator, qan_tour_code, sin_tour_code, sin_ticket_designator = "", "", "", "", "", "", "", "", ""
         data = self.config_path()
         for k, v in data["tour_code_and_ticket_designator"].items():
             if k == "JetBlue":
@@ -106,7 +107,7 @@ class BasicView(View):
         username = os.getlogin()
         user_path = Path(os.path.join("C:/Users", username))
         data = self.config_path()
-        group_mapping_file_path = data["group_mapping_path"]
+        group_mapping_file_path = data["air_group_mapping_path"]
         group_mapping_file = Path(os.path.join(user_path, group_mapping_file_path))
         path = PureWindowsPath(group_mapping_file)
         full_file_path = Path(os.path.join(path, "Group Airline Discounts Mapping.xlsx"))
@@ -114,7 +115,7 @@ class BasicView(View):
         xl = pd.ExcelFile(full_file_path)
         df = pd.read_excel(xl, sheet_name=None)
         df = pd.concat(df, ignore_index=True)
-        df.to_csv(csv_file_path, encoding='utf8', index=False)
+        df.to_csv(csv_file_path, encoding='utf-8', index=False)
         df = pd.read_csv(csv_file_path)
         return df
 
@@ -196,19 +197,19 @@ class BasicView(View):
         prism_discount_list = []
         xl = pd.ExcelFile(file_path)
         df = pd.read_excel(xl, sheet_name="Air - PRISM & Other")
-        df.to_csv(csv_file_path, encoding='utf8', index=False)
+        df.to_csv(csv_file_path, encoding='utf-8', index=False)
         df = pd.read_csv(csv_file_path)
         index_list = df.index[df["Quarter"] == quarter_year].tolist()
         for i, p in zip(index_list, prism_airlines):
             prism_discount_list.append(p)
-            pre_discount = df.iloc[i]["Pre-Discount"]
-            pre_discount = pre_discount.round(2)
+            pre_discount = df.iloc[[i, "Pre-Discount"]]
+            pre_discount = "{:,.2f}".format(pre_discount)
             prism_discount_list.append(pre_discount)
-            actual_spend = df.iloc[i]["Actual Spend"]
-            actual_spend = actual_spend.round(2)
+            actual_spend = df.iloc[[i,"Actual Spend"]]
+            actual_spend = "{:,.2f}".format(actual_spend)
             prism_discount_list.append(actual_spend)
-            savings = df.iloc[i]["Savings"]
-            savings = savings.round(2)
+            savings = df.iloc[[i,"Savings"]]
+            savings = "{:,.2f}".format(savings)
             prism_discount_list.append(savings)
         return prism_discount_list
 
@@ -246,6 +247,7 @@ class RawDataView(BasicView):
     success_url = 'air/get_raw_data.html'
     error_url = 'commons/error.html'
     
+    # Function to get the raw data - air
     def get(self, request, *args, **kwargs):
         if request.session.has_key('username'):
             username = request.session.get('username')
@@ -256,11 +258,11 @@ class RawDataView(BasicView):
             message = "Unauthorized access. Please login again."
             return render(request, self.error_url, context={'message': message})
         
-
+    # Function to post the raw data before oneschema
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
         domain = "travel"
-        travel_type = "air"
+        travel_type = "Air"
         if request.session.has_key('username'):
             username = request.session.get('username')
             request.session.modified = True
@@ -305,7 +307,7 @@ class LoadRawDataView(BasicView):
             username = request.session.get('username')
             request.session.modified = True
             osc_jwt_token = request.headers['Authorization']
-            decode_jwt = jwt.decode(osc_jwt_token, OSC_CLIENT_SECRET, algorithms="HS256")
+            decode_jwt = jwt.decode(osc_jwt_token, OSC_CLIENT_SECRET, algorithms=["HS256"])
             if decode_jwt.get('iss') == OSC_CLIENT_ID:
                 customer_name = decode_jwt.get('customer_name')
                 quarter = decode_jwt.get('quarter')
@@ -328,13 +330,13 @@ class LoadRawDataView(BasicView):
                     final_rec.append(rows)
                 one_schema_air_path = self.oneschema_air_path()
                 final_oneschema_payload_path = PureWindowsPath(one_schema_air_path)
-                csv_file_name = customer_name + "_" + travel_type + "_" +quarter + year + "_" + country + ".csv"
+                csv_file_name = "{}_{}_{}{}_{}.csv".format(customer_name, travel_type, quarter, year, country)
                 csv_file_path = Path(os.path.join(final_oneschema_payload_path, csv_file_name))
                 with open(csv_file_path, 'w', newline='') as csv_file:
                     csv_writer = csv.writer(csv_file)
                     csv_writer.writerow(column_headers)
                     csv_writer.writerows(final_rec)
-                context = {'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'travel_agency': travel_agency, 'csv_file_path': csv_file_path}
+                context = {'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'travel_agency': travel_agency, 'travel_type': travel_type, 'csv_file_path': csv_file_path}
                 return render(request, self.template_name, context)   
         else:
             message = "Unauthorized access. Please login again."
@@ -352,8 +354,10 @@ class ProcessDataView(BasicView):
             username = request.session.get('username')
             request.session.modified = True
             src_csv_file_path = request.POST.get('csv_file_path')
+            final_dropbox_path, group_mapping_file_path = "", ""
             customer_name = request.POST.get('customer_name')
             travel_agency = request.POST.get('travel_agency')
+            travel_type = request.POST.get('travel_type')
             country = request.POST.get('country')
             year = request.POST.get('year')
             quarter = request.POST.get('quarter')
@@ -363,7 +367,7 @@ class ProcessDataView(BasicView):
                     win_etl_output_file_path = Path(os.path.join(win_etl_file_path, customer_name))
                     dropbox_path = Path(os.path.join(win_etl_output_file_path, "3. Performance Reports", year, quarter, "Raw TMC Data-Dev"))
                     final_dropbox_path = PureWindowsPath(dropbox_path)
-                    csv_file_name = customer_name + "_Air_" + quarter + year + "_" + country + ".csv"
+                    csv_file_name = "{}_{}_{}{}_{}.csv".format(customer_name, travel_type, quarter, year, country)
                     dest_csv_file_path = Path(os.path.join(final_dropbox_path, csv_file_name))
                     shutil.copy(src_csv_file_path, dest_csv_file_path)
                     df = pd.read_csv(dest_csv_file_path)
@@ -372,7 +376,7 @@ class ProcessDataView(BasicView):
                     user = os.getlogin()
                     user_path = Path(os.path.join("C:/Users", user))
                     data = self.config_path()
-                    group_mapping_file_path = data["group_mapping_path"]
+                    group_mapping_file_path = data["air_group_mapping_path"]
                     group_mapping_file = Path(os.path.join(user_path, group_mapping_file_path))
                     group_mapping_file_path = PureWindowsPath(group_mapping_file)
 
@@ -542,6 +546,8 @@ class ProcessDataView(BasicView):
                             non_prism[ali] = "N"
                     df["Non-Prism Preferred"] = [np for np in non_prism]
                     
+                    # Prism flights data still pending....
+                    
                     # Rearranging the columns
                     headers = ["Travel Date Quarter", "Travel Date Half Year", "Travel Date Year", 
                             "Client", "Agency", "PoS", "Traveler Name", 
@@ -558,9 +564,9 @@ class ProcessDataView(BasicView):
 
                     # Writing new column names into separate .xlsx file
                     win_etl_file_path = self.base_path()
-                    new_file_name = customer_name + "_Air_" + quarter + year + "_"+ country +"_FinalData" + ".xlsx"
+                    new_file_name = "{}_{}_{}{}_{}_FinalData.xlsx".format(customer_name, travel_type, quarter, year, country)
                     file_name = Path(os.path.join(final_dropbox_path, new_file_name))
-                    df.to_excel(file_name, encoding='utf8', index=False)
+                    df.to_excel(file_name, index=False)
                     context = {'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'final_sheet': file_name}
                     return render(request, self.template_name, context=context)
             except FileNotFoundError:
@@ -570,7 +576,7 @@ class ProcessDataView(BasicView):
             finally:
                 # Deleting previous version of CSV - raw data file
                 os.chdir(final_dropbox_path)
-                pre_csv_file = customer_name + "_Air_" + quarter + year + "_" + country + ".csv"
+                pre_csv_file = "{}_{}_{}{}_{}.csv".format(customer_name, travel_type, quarter, year, country)
                 if os.path.exists(pre_csv_file):
                     os.remove(pre_csv_file)
 

@@ -11,7 +11,7 @@ class AirRawdataForm(forms.Form):
     def clean_customer_name(self):
         customer_name = self.cleaned_data.get("customer_name")
         for i in range(len(customer_name)):
-            if ((customer_name[i] >= 'A' and customer_name[i] <= 'Z') or (customer_name[i] >= 'a' and customer_name[i] <= 'z') or customer_name[i] == "&") == False:
+            if ((customer_name[i] >= 'A' and customer_name[i] <= 'Z') or (customer_name[i] >= 'a' and customer_name[i] <= 'z') or customer_name[i] == "&" or customer_name[i] == " ") == False:
                 raise forms.ValidationError("Only alphabets and ampersands are allowed. Please enter a valid customer name.")
         return customer_name
     

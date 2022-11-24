@@ -3,15 +3,12 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth import authenticate, login, logout
 from django.views.generic.edit import FormView
 from django.views.generic import View, TemplateView
-from django.core.mail import EmailMessage
+from django.contrib.auth.models import User
 
 from .forms import *
-from django.contrib.auth.models import User
-from CPR.settings import dev
-import smtplib
+from decouple import config
+import smtplib, ssl
 from email.message import EmailMessage
-from django.core.mail import send_mail
-from django.core import mail
 
 class HomeView(TemplateView):
     template_name = 'commons/home.html'
@@ -113,16 +110,19 @@ class CreateUser(View):
                     user.is_active = False
                     user.save()
                     
-                    connection = mail.get_connection()
-                    connection.open()
-                    email = mail.EmailMessage(
-                        'CPR Account Creation',
-                        'Body goes here',
-                        dev.EMAIL_HOST_USER,
-                        ['pradeepika.junapudi@vearc.com'],
-                        connection=connection,
-                    )
-                    email.send()
+                    msg = EmailMessage()
+                    msg.set_content("The body of the email is here")
+                    msg['Subject'] = "An Email Alert"
+                    msg['From'] = config('EMAIL_HOST_USER')
+                    msg['To'] = cpr_user_email
+                    
+                    context = ssl.create_default_context()
+                    
+                    with smtplib.SMTP("smtp.office365.com", port=587) as smtp:
+                        smtp.starttls(context=context)
+                        smtp.login(msg['From'], config('EMAIL_HOST_PASSWORD'))
+                        smtp.send_message(msg)
+                    
                     message = 'User created successfully'
                     return render(request, self.success_url, context={'message': message})
             else:

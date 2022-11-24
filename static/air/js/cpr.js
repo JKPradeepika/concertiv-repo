@@ -49,17 +49,19 @@ let importer;
 
 function launchOneSchema(jwt_token, domain_name, travel_type) {
   iFrame_details.userJwt = jwt_token;
-  if (domain_name == "travel" && travel_type == "air"){
+  console.log(iFrame_details);
+  if (domain_name == "travel" && travel_type == "Air"){
     iFrame_details.templateKey = "air_file";
   }
-  else if (domain_name == "travel" && travel_type == "hotels"){
+  else if (domain_name == "travel" && travel_type == "Hotels"){
     iFrame_details.templateKey = "hotel_file";
   }
-  else if (domain_name == "travel" && travel_type == "cars"){
+  else if (domain_name == "travel" && travel_type == "Cars"){
     iFrame_details.templateKey = "cars_file";
   }
   
   importer = oneschemaImporter(iFrame_details);
+  console.log(importer);
   importer.launch()
 
   importer.on("success", (data) => {
