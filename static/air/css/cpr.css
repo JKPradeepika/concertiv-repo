@@ -21,6 +21,10 @@
   color: #fff;
   font-weight: bold;
 }
+.btn.btn-primary:active, 
+.btn.btn-primary:focus {
+  border: 1px solid #0e2c3f; 
+}
 .data-attributes{
   font-weight: 500;
   color: #0e2c3f;
