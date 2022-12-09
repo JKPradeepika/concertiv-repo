@@ -17,8 +17,8 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('CPR-dev/', include('users.urls', namespace='superuser')),
+    # path('admin/', admin.site.urls),
+    path('CPR-dev/', include('concertiv.urls', namespace='cprauth')),
     path('CPR-dev/', include('air.urls', namespace="air")),
     path('CPR-dev/', include('hotels.urls', namespace="hotels")),
 ]

@@ -1,4 +1,5 @@
 {% extends 'commons/base.html'%}
+{% block title %}User Profile{% endblock %}
 {% block content %}
 <br><br><br><br>
 <div class="container-fluid text-center">
@@ -8,7 +9,7 @@
             <caption></caption>
             <thead>
                 <tr>
-                    <th> Username </th>
+                    <th> Name </th>
                     <th> Email </th>
                     <th> Role </th>
                     <th> Last Login </th>
@@ -16,7 +17,7 @@
             </thead>
             <tbody>
                 <tr>
-                    <td> {{ user }} </td>
+                    <td> {{ username }} </td>
                     <td> {{ email }} </td>
                     <td> {{ role }} </td>
                     <td> {{ last_login}} </td>

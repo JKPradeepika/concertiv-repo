@@ -1,5 +1,6 @@
 {% extends 'commons/base.html'%}
 {% load static %}
+{% block title %}Login{% endblock %}
 {% block content %}
 <br><br><br><br>
 <div class="container-fluid text-center">
@@ -11,7 +12,8 @@
         <table class=" center data">
           <caption></caption>
           {{ form.as_table }}
-        </table>
+        </table> 
+        
       <br>
       <button type="submit" class="btn btn-primary">Sign In</button>
   </form>

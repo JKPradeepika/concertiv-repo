@@ -25,6 +25,12 @@
 .btn.btn-primary:focus {
   border: 1px solid #0e2c3f; 
 }
+.icon-pencil-square{
+  color:#0e2c3f;
+}
+.icon-trash3-fill{
+  color:#0e2c3f;
+}
 .data-attributes{
   font-weight: 500;
   color: #0e2c3f;

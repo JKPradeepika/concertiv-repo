@@ -1,0 +1,16 @@
+{% extends 'commons/base.html'%}
+{% block title %}Email Sent{% endblock %}
+{% block content %}
+<div class="container-fluid text-center">
+  <div class="row">
+    <div class="col-md-6 ml-auto">
+        <a class="btn btn-primary" href="{% url 'cprauth:all_users' %}" role="button">Back</a>
+    </div>
+  </div>
+  <br><br><br><br>
+  <p class="center data">
+    <br>
+    <h3>{{ message }}</h3>
+  </p>
+</div>
+{% endblock %}

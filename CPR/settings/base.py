@@ -27,7 +27,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    # 'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.postgres',
     'rest_framework',
-    'users',
+    'concertiv',
     'air',
     'hotels',
 ]
@@ -70,6 +70,8 @@ TEMPLATES = [
         },
     },
 ]
+
+AUTH_USER_MODEL = 'concertiv.User'
 
 WSGI_APPLICATION = 'CPR.wsgi.application'
 

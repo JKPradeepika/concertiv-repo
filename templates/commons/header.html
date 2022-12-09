@@ -4,10 +4,11 @@
     {% load static %}
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<title>Concertiv | CPR</title>
+	<title>{% block title %}Concertiv | CPR{% endblock %}</title>
 	<link rel="shortcut icon" href="{% static 'air/images/favicon.ico'%}" type="image/x-icon" />
-	<link rel="stylesheet" href="{% static 'air/css/cpr.css' %}" />
-	<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+	<link rel="stylesheet" href="{% static 'air/css/cpr.css' %}" type="text/css" />
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"  type="text/css"/>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.2/font/bootstrap-icons.css" />
 	<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
 	<script src="https://d3ah8o189k1llu.cloudfront.net/oneschema-importer-latest.min.js"></script>
 	<script src="{% static 'air/js/cpr.js' %}"></script>
@@ -16,9 +17,27 @@
 <body class="bg-light">
 	<header class="section-header py-4">
 		<div class="container">
-			<a href="{% url 'superuser:home'%}" class="navbar-brand">
+			<a href="{% url 'cprauth:home'%}" class="navbar-brand">
 				<img src="{% static 'air/images/logo_1.png' %}" width="250" height="28" alt="Concertiv - Logo">
 			</a>
+			<ul class="navbar-nav ml-auto" style="float:right">
+				{% if user.is_authenticated %}
+					<li class="nav-item dropdown active">
+						<a class="nav-link  dropdown-toggle data" href="#" data-toggle="dropdown"> Hi, {{ username }}</a>
+						<ul class="dropdown-menu dropdown-menu-right">
+						<li><a class="dropdown-item data" href="{% url 'cprauth:profile' %}"> Profile </a></li>
+						<li><a class="dropdown-item dropdown-toggle data" href="#"> Operations </a>
+							<ul class="submenu submenu-left dropdown-menu">
+								<li><a class="dropdown-item data" href="{% url 'cprauth:all_users' %}">CPR Users</a></li>
+							</ul>
+						</li>
+						<li><a class="dropdown-item data" href="{% url 'cprauth:logout' %}"> Logout </a></li>
+						</ul>
+					</li>
+				{% else %}
+					<li class="nav-item active"><a class="nav-link data" href="{% url 'cprauth:login' %}"> Sign In </a></li>
+				{% endif %}
+			</ul> 
 		</div>
 	</header>
 	<div class="container">
@@ -28,7 +47,7 @@
 			</button>
 			<div class="collapse navbar-collapse" id="main_nav">
 				<ul class="navbar-nav">
-					<li class="nav-item active"> <a class="nav-link" href="{% url 'superuser:home'%}">Home </a> </li>
+					<li class="nav-item active"> <a class="nav-link" href="{% url 'cprauth:home'%}">Home </a> </li>
 					<li class="nav-item active"> <a class="nav-link" href="#">Insurance </a> </li>
 					<li class="nav-item active"> <a class="nav-link" href="#">Market Data </a> </li>
 					<li class="nav-item active"> <a class="nav-link" href="#">Technology </a> </li>
@@ -36,8 +55,8 @@
 						<a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">  Travel  </a>
 						<ul class="dropdown-menu">
 							<li><a class="dropdown-item" href="#"> Airlines &raquo </a>
-								<ul class="submenu dropdown-menu">
-									<li><a class="dropdown-item" href="{% url 'air:raw_data' %}">CPR Process</a></li>
+								<ul class="submenu submenu-left dropdown-item">
+									<li><a class="dropdown-item data" href="{% url 'air:raw_data' %}">CPR Process</a></li>
 								</ul>
 							</li>
 							<li><a class="dropdown-item" href="#"> Cars </a></li>
@@ -54,24 +73,24 @@
 						</ul>
 					</li>
 				</ul>
-				<ul class="navbar-nav ml-auto">
+				{% comment %} <ul class="navbar-nav ml-auto">
 					{% if user.is_authenticated %}
 						<li class="nav-item dropdown active">
 							<a class="nav-link  dropdown-toggle" href="#" data-toggle="dropdown"> Hi, {{ username }}</a>
 							<ul class="dropdown-menu dropdown-menu-right">
-							<li><a class="dropdown-item" href="{% url 'superuser:profile' %}"> Profile </a></li>
+							<li><a class="dropdown-item" href="{% url 'cprauth:profile' %}"> Profile </a></li>
 							<li><a class="dropdown-item dropdown-toggle" href="#"> Operations </a>
 								<ul class="submenu submenu-left dropdown-menu">
-									<li><a class="dropdown-item" href="{% url 'superuser:create_cpr_user' %}">CPR Users</a></li>
+									<li><a class="dropdown-item" href="{% url 'cprauth:all_users' %}">CPR Users</a></li>
 								</ul>
 							</li>
-							<li><a class="dropdown-item" href="{% url 'superuser:logout' %}"> Logout </a></li>
+							<li><a class="dropdown-item" href="{% url 'cprauth:logout' %}"> Logout </a></li>
 							</ul>
 						</li>
 					{% else %}
-						<li class="nav-item active"><a class="nav-link" href="{% url 'superuser:login' %}"> Sign In </a></li>
+						<li class="nav-item active"><a class="nav-link" href="{% url 'cprauth:login' %}"> Sign In </a></li>
 					{% endif %}
-				</ul>
+				</ul> {% endcomment %}
 			</div>
 		</nav>
 		<section class="section-content py-3">

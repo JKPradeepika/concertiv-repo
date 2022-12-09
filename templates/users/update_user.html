@@ -8,15 +8,19 @@
   </div>
 <br><br><br><br>
   <form method="post">
-    <h3>Create CPR User</h3>
+    <h3>Update CPR User</h3>
     <hr class="login">
       {% csrf_token %}
         <table class="center data">
           <caption></caption>
+          {% for user in cpr_user %}
+            <h6>Email: {{ user.email }}</h6><br>
+            <h6>Role: {{ user.role }}</h6><br>
+          {% endfor %}  
           {{ form.as_table }}
         </table>
       <br>
-      <button type="submit" class="btn btn-primary">Submit</button>
+      <button type="submit" class="btn btn-primary">Save</button>
   </form>
 </div>
 {% endblock %}
