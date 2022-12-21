@@ -4,12 +4,16 @@ from .views import *
 app_name = 'concertiv'
 
 urlpatterns = [
-    path('', AdminLogin.as_view(), name='login'),
+    path('', AdminLoginView.as_view(), name='login'),
     path('home/', HomeView.as_view(), name='home'),
-    path('logout/', AdminLogout.as_view(), name='logout'),
-    path('profile/', AdminProfile.as_view(), name='profile'),
-    path('users/create', CreateUser.as_view(), name='create_user'),
-    path('users/all', AllUsers.as_view(), name='all_users'),
-    path('users/<int:id>/update', UpdateUser.as_view(), name='update_user'),
-    path('users/<int:id>/delete', DeleteUser.as_view(), name='delete_user'),
+    path('logout/', AdminLogoutView.as_view(), name='logout'),
+    path('profile/', AdminProfileView.as_view(), name='profile'),
+    path('users/create', CreateUserView.as_view(), name='create_user'),
+    path('users/all', AllUsersView.as_view(), name='all_users'),
+    path('users/update/<int:id>', UpdateUserView.as_view(), name='update_user'),
+    path('users/delete/<int:id>', DeleteUserView.as_view(), name='delete_user'),
+    path('users/create_password/<uidb64>/<token>', CreatePasswordView.as_view(), name='create_password'),
+    path('users/', UsersLoginView.as_view(), name='user_login'),
+    path('users/reset_password', ResetPasswordView.as_view(), name='reset_password'),
+    path('users/reset_password/<uidb64>/<token>', ResetPasswordConfirmView.as_view(), name='reset_password_done'),
 ]

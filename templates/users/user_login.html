@@ -1,6 +1,6 @@
 {% extends 'commons/base.html'%}
 {% load static %}
-{% block title %}Login{% endblock %}
+{% block title %}User Login{% endblock %}
 {% block content %}
 <br><br><br><br>
 <div class="container-fluid text-center">
@@ -8,6 +8,7 @@
   <form method="post">
     <h3>Sign In</h3>
     <hr class="login">
+    <br>
       {% csrf_token %}
         <table class=" center data">
           <caption></caption>
@@ -15,6 +16,8 @@
         </table> 
       <br>
       <button type="submit" class="btn btn-primary">Sign In</button>
+      <br><br>
+      <p class="data"><a href="{% url 'cprauth:reset_password' %}"><u>Forgot Password?</u></a></p>
   </form>
 </div>
 {% endblock %}

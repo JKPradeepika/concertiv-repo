@@ -26,18 +26,20 @@
 						<a class="nav-link  dropdown-toggle data" href="#" data-toggle="dropdown"> Hi, {{ username }}</a>
 						<ul class="dropdown-menu dropdown-menu-right">
 						<li><a class="dropdown-item data" href="{% url 'cprauth:profile' %}"> Profile </a></li>
+						{% if user.is_superuser %}
 						<li><a class="dropdown-item dropdown-toggle data" href="#"> Operations </a>
 							<ul class="submenu submenu-left dropdown-menu">
 								<li><a class="dropdown-item data" href="{% url 'cprauth:all_users' %}">CPR Users</a></li>
 							</ul>
 						</li>
+						{% endif %}
 						<li><a class="dropdown-item data" href="{% url 'cprauth:logout' %}"> Logout </a></li>
 						</ul>
 					</li>
 				{% else %}
 					<li class="nav-item active"><a class="nav-link data" href="{% url 'cprauth:login' %}"> Sign In </a></li>
 				{% endif %}
-			</ul> 
+			</ul>
 		</div>
 	</header>
 	<div class="container">
@@ -55,8 +57,8 @@
 						<a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">  Travel  </a>
 						<ul class="dropdown-menu">
 							<li><a class="dropdown-item" href="#"> Airlines &raquo </a>
-								<ul class="submenu submenu-left dropdown-item">
-									<li><a class="dropdown-item data" href="{% url 'air:raw_data' %}">CPR Process</a></li>
+								<ul class="submenu dropdown-menu">
+									<li><a class="dropdown-item" href="{% url 'air:raw_data' %}">CPR Process</a></li>
 								</ul>
 							</li>
 							<li><a class="dropdown-item" href="#"> Cars </a></li>
@@ -73,24 +75,6 @@
 						</ul>
 					</li>
 				</ul>
-				{% comment %} <ul class="navbar-nav ml-auto">
-					{% if user.is_authenticated %}
-						<li class="nav-item dropdown active">
-							<a class="nav-link  dropdown-toggle" href="#" data-toggle="dropdown"> Hi, {{ username }}</a>
-							<ul class="dropdown-menu dropdown-menu-right">
-							<li><a class="dropdown-item" href="{% url 'cprauth:profile' %}"> Profile </a></li>
-							<li><a class="dropdown-item dropdown-toggle" href="#"> Operations </a>
-								<ul class="submenu submenu-left dropdown-menu">
-									<li><a class="dropdown-item" href="{% url 'cprauth:all_users' %}">CPR Users</a></li>
-								</ul>
-							</li>
-							<li><a class="dropdown-item" href="{% url 'cprauth:logout' %}"> Logout </a></li>
-							</ul>
-						</li>
-					{% else %}
-						<li class="nav-item active"><a class="nav-link" href="{% url 'cprauth:login' %}"> Sign In </a></li>
-					{% endif %}
-				</ul> {% endcomment %}
 			</div>
 		</nav>
 		<section class="section-content py-3">

@@ -386,7 +386,7 @@ class FuzzyMatchView(BasicView):
             return render(request, self.error_url, context={'message': message})
 
 
-class CTVGroupSavingsCalculation(BasicView):
+class CTVGroupSavingsCalculationView(BasicView):
     template_name = 'hotels/savings_calculation.html'
     success_url = 'hotels/final_rec.html'
     error_url = 'commons/error.html'

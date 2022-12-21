@@ -1,14 +1,22 @@
-from django.shortcuts import render
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.hashers import check_password, make_password
 from django.views.generic.edit import FormView
 from django.views.generic import View, TemplateView
+from django.template.loader import render_to_string
+from django.shortcuts import render
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
 
 from .forms import *
 from .models import User
+
 from decouple import config
 import smtplib, ssl
-from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 
 class HomeView(TemplateView):
     template_name = 'commons/home.html'
@@ -24,7 +32,7 @@ class HomeView(TemplateView):
             return render(request, self.error_url, context={'message': message})
 
 
-class AdminLogin(LoginView):
+class AdminLoginView(LoginView):
     form_class = AdminLoginForm
     template_name = 'users/login.html'
     error_url = "commons/error.html"
@@ -54,11 +62,11 @@ class AdminLogin(LoginView):
                     request.session['username'] = name
                 return render(request,'commons/home.html' , context={'username': name})
             elif not user:
-                message = "Unauthorized access. Please login again."
+                message = "Please check your username or password."
                 return render(request, self.error_url, context={'message': message})
         return render(request, self.template_name, context={'form': form})
 
-class AdminLogout(LogoutView):
+class AdminLogoutView(LogoutView):
     template_name = "users/logout.html"
     
     def post(self, request, *args, **kwargs):
@@ -67,7 +75,7 @@ class AdminLogout(LogoutView):
         return render(request, self.template_name)  
     
 
-class AdminProfile(FormView):
+class AdminProfileView(FormView):
     template_name = "users/profile.html"
     error_url = "commons/error.html"
     
@@ -75,7 +83,7 @@ class AdminProfile(FormView):
         if request.session.has_key('username'):
             username = request.session.get('username')
             request.session.modified = True
-            user = User.objects.get(id=1)
+            user = User.objects.get(username=username)
             user_email = user.email
             user_role = user.role
             last_login = user.last_login
@@ -84,11 +92,10 @@ class AdminProfile(FormView):
             message = "Unauthorized access. Please login again."
             return render(request, self.error_url, context={'message': message})
 
-class CreateUser(View):
+class CreateUserView(View):
     form_class = UserSignupForm
     confirm_password_form_class = UserPasswordConfirmationForm
     template_name = "users/create_user.html"
-    email_template_name = "users/password_confirm.html"
     success_url = "users/email_sent.html"
     error_url = "commons/error.html"
     
@@ -115,18 +122,26 @@ class CreateUser(View):
                     user.is_active = False
                     user.role = "staff"
                     user.save()
-                    msg = EmailMessage()
-                    msg.set_content("The body of the email is here")
-                    msg['Subject'] = "An Email Alert"
-                    msg['From'] = config('EMAIL_HOST_USER')
-                    msg['To'] = cpr_user_email
+                    uid = urlsafe_base64_encode(force_bytes(user.id))
+                    token = default_token_generator.make_token(user)
+                    link = request.build_absolute_uri('create_password/{0}/{1}'.format(uid, token))
+                    sender_email = str(config('EMAIL_HOST_USER'))
+                    receiver_email = cpr_user_email
+                    password = str(config('EMAIL_HOST_PASSWORD'))
+                    message = MIMEMultipart("alternative")
+                    message["Subject"] = "CPR - Account Creation"
+                    message["From"] = sender_email
+                    message["To"] = receiver_email
+                    html = render_to_string('users/email_confirmation.html', context={'link': link})
+                    html_msg = MIMEText(html, "html")
+                    message.attach(html_msg)
                     context = ssl.create_default_context()
-                    with smtplib.SMTP("smtp.office365.com", port=587) as smtp:
-                        smtp.starttls(context=context)
-                        smtp.login(msg['From'], str(config('EMAIL_HOST_PASSWORD')))
-                        smtp.send_message(msg)
+                    with smtplib.SMTP(str(config('EMAIL_HOST')), port=587) as server:
+                        server.starttls(context=context)
+                        server.login(sender_email, password)
+                        server.sendmail(sender_email, receiver_email, message.as_string())
                     
-                    message = 'User created successfully. An Email alert has been sent'
+                    message = 'An Email alert has been sent successfully.'
                     return render(request, self.success_url, context={'message': message, 'username': username})
             else:
                 form = self.form_class(request.POST)
@@ -135,7 +150,7 @@ class CreateUser(View):
             return render(request, self.error_url, context={'message': message})
         return render(request, self.template_name, context={'form': form, 'username': username})
                     
-class AllUsers(View):
+class AllUsersView(View):
     template_name = 'users/all_users.html'
 
     def get(self, request, *args, **kwargs):
@@ -147,7 +162,7 @@ class AllUsers(View):
             return render(request, self.template_name, context={'username': username, 'cpr_user': user})
 
 
-class UpdateUser(View):
+class UpdateUserView(View):
     form_class = UserUpdateForm
     template_name = 'users/update_user.html'
     all_users_template_name = 'users/all_users.html'
@@ -172,8 +187,9 @@ class UpdateUser(View):
                 for user in user_dict:
                     user.username = cpr_user_name
                     user.save()
-                user = User.objects.all()
-                return render(request, self.all_users_template_name, context={'username': username, 'cpr_user': user})
+                all_users = User.objects.all().filter(is_deleted=False)
+                all_user = all_users.exclude(username=username)
+                return render(request, self.all_users_template_name, context={'username': username, 'cpr_user': all_user})
             else:
                 form = self.form_class(request.POST)
         else:
@@ -182,7 +198,7 @@ class UpdateUser(View):
         return render(request, self.template_name, context={'form': form, 'username': username})
     
     
-class DeleteUser(View):
+class DeleteUserView(View):
     template_name = 'users/delete_user.html'
     all_users_template_name = 'users/all_users.html'
     
@@ -201,11 +217,141 @@ class DeleteUser(View):
             username = request.session.get('username')
             request.session.modified = True
             user_dict = User.objects.all().filter(id=id)
-            print(user_dict)
-            print(type(user_dict))
             for user in user_dict:
                 user.is_deleted = True
+                user.is_active = False
                 user.save()
             all_users = User.objects.all().filter(is_deleted=False)
-            return render(request, self.all_users_template_name, context={'username': username, 'cpr_user': all_users})
+            all_user = all_users.exclude(username=username)
+            return render(request, self.all_users_template_name, context={'username': username, 'cpr_user': all_user})
+        
+
+class CreatePasswordView(View):
+    form_class = UserPasswordConfirmationForm
+    template_name = 'users/create_password.html'
+    success_url = 'users/account_created.html'
+    error_url = 'commons/error.html'
+    
+    
+    def get(self, request, *args, **kwargs):
+        form = self.form_class
+        return render(request, self.template_name, context={'form': form})
+    
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            password = request.POST.get('password')
+            link = request.POST.get('link')
+            user_id = link.split('/')[-2]
+            usr_id = urlsafe_base64_decode(user_id).decode('ascii')
+            user = User.objects.get(id=usr_id)
+            user.password = make_password(password, salt=None, hasher='default')
+            user.is_active = True
+            user.is_staff = True
+            user.save()
+            link = link.rsplit('/', 3)
+            link = link[0]
+            return render(request, self.success_url, context={'link': link})
+        else:
+            form = self.form_class(request.POST)
+        return render(request, self.template_name, context={'form': form})
             
+            
+class UsersLoginView(AdminLoginView):
+    form_class = UserLoginForm
+    template_name = 'users/user_login.html'
+    error_url = "commons/error.html"
+    
+    def get(self, request, *args, **kwargs):
+        form = self.form_class
+        return render(request, self.template_name, context={'form': form})
+        
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()
+        if self.form_valid:
+            user_email = request.POST.get('email')
+            user_password = request.POST.get('password')
+            email = str(User.objects.get(email=user_email))
+            user = authenticate(email=email, password=user_password)
+            name = ""
+            if user is not None:
+                login(request, user)
+                user_dict = User.objects.all().filter(email=user)
+                for user in user_dict:
+                    name = user.username
+                    request.session['username'] = name
+                return render(request,'commons/home.html' , context={'username': name})
+            elif not user:
+                message = "Please check your username or password is incorrect."
+                return render(request, self.error_url, context={'message': message})
+        return render(request, self.template_name, context={'form': form})
+    
+    
+class ResetPasswordView(View):
+    form_class = ResetPasswordForm
+    template_name = "users/password_reset.html"
+    success_url = "users/password_reset_done.html"
+    
+    def get(self, request, *args, **kwargs):
+        form = self.form_class
+        return render(request, self.template_name, context={'form': form})        
+    
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            email = request.POST.get('email')
+            if User.objects.filter(email=email).exists():
+                user = User.objects.get(email=email)
+                uid = urlsafe_base64_encode(force_bytes(user.id))
+                token = default_token_generator.make_token(user)
+                link = request.build_absolute_uri('reset_password/{0}/{1}'.format(uid, token))
+                home_link = link.rsplit('/', 3)
+                portal_link = home_link[0]
+                sender_email = str(config('EMAIL_HOST_USER'))
+                receiver_email = email
+                password = str(config('EMAIL_HOST_PASSWORD'))
+                message = MIMEMultipart("alternative")
+                message["Subject"] = "CPR - Forgot / Reset Password"
+                message["From"] = sender_email
+                message["To"] = receiver_email
+                html = render_to_string('users/password_reset_email.html', context={'link': link, 'portal_link': portal_link})
+                html_msg = MIMEText(html, "html")
+                message.attach(html_msg)
+                context = ssl.create_default_context()
+                with smtplib.SMTP(str(config('EMAIL_HOST')), port=587) as server:
+                    server.starttls(context=context)
+                    server.login(sender_email, password)
+                    server.sendmail(sender_email, receiver_email, message.as_string())
+                return render(request, self.success_url)
+        else:
+            form = self.form_class(request.POST)
+        return render(request, self.template_name, context={'form': form})
+
+
+class ResetPasswordConfirmView(View):
+    form_class = ResetPasswordConfirmForm
+    template_name = 'users/password_reset_confirm.html'
+    success_url = 'users/password_reset_complete.html'
+    
+    def get(self, request, *args, **kwargs):
+        form = self.form_class
+        return render(request, self.template_name, context={'form': form})
+    
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            password = request.POST.get('password')
+            link = request.POST.get('link')
+            user_id = link.split('/')[-2]
+            usr_id = urlsafe_base64_decode(user_id).decode('ascii')
+            user = User.objects.get(id=usr_id)
+            if user.id:
+                user.set_password(password)
+                user.save()
+            return render(request, self.success_url)
+        else:
+            form = self.form_class(request.POST)
+        return render(request, self.template_name, context={'form': form})
+            
+            
+       

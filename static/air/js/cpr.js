@@ -49,7 +49,6 @@ let importer;
 
 function launchOneSchema(jwt_token, domain_name, travel_type) {
   iFrame_details.userJwt = jwt_token;
-  console.log(iFrame_details);
   if (domain_name == "travel" && travel_type == "Air"){
     iFrame_details.templateKey = "air_file";
   }
@@ -59,7 +58,7 @@ function launchOneSchema(jwt_token, domain_name, travel_type) {
   else if (domain_name == "travel" && travel_type == "Cars"){
     iFrame_details.templateKey = "cars_file";
   }
-  
+  console.log(iFrame_details);
   importer = oneschemaImporter(iFrame_details);
   console.log(importer);
   importer.launch()
@@ -73,8 +72,8 @@ function launchOneSchema(jwt_token, domain_name, travel_type) {
     xhr.setRequestHeader("X-CSRFToken", csrftoken);
     xhr.onreadystatechange = function () {
       if (xhr.readyState === 4) {
-        // console.log(xhr.status);
-        // console.log(xhr.responseText);
+        console.log(xhr.status);
+        console.log(xhr.responseText);
         document.getElementById("container").hidden =  true;
         document.getElementById("loading_container").innerHTML =  xhr.responseText;
       }};

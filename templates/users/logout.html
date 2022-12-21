@@ -9,10 +9,17 @@
     <h3>You have logged out successfully</h3>
     <hr class="login">
       {% csrf_token %}
+      {% if user.is_superuser %}
         <p class="center data">
           <br>
           To sign in again, click <a href="{%url 'cprauth:login'%}"><u>here</u></a>
         </p>
+      {% else %}
+      <p class="center data">
+        <br>
+        To sign in again, click <a href="{%url 'cprauth:user_login'%}"><u>here</u></a>
+      </p>
+      {% endif %}
   </form>
 </div>
 {% endblock %}
