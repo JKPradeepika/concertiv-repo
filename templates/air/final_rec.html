@@ -1,11 +1,11 @@
 {% extends 'commons/base.html'%}
-{% block title %}Final Result {% endblock %}
 {% block content %}
 <br><br><br><br>
   <div class="container-fluid text-center">
       <span class="data-attributes">{{ customer_name }} - {{ country }} - {{ year }} - {{ quarter }}</span>
       <br><br><br>
       <h3 class="data">Process completed successfully. </h3><br><br>
-    <p class="data">Please find the file in below path <br>{{ final_sheet }}</p>
+    <p class="data">Please find the file in below path <br>{{ final_sheet }}</p><br><br>
+    <h5 class="data"> Data saved into database successfully. </h5><br><br>
   </div>
 {% endblock %}

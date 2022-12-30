@@ -33,7 +33,11 @@
 							</ul>
 						</li>
 						{% endif %}
+						{% if user.is_superuser %}
 						<li><a class="dropdown-item data" href="{% url 'cprauth:logout' %}"> Logout </a></li>
+						{% else %}
+						<li><a class="dropdown-item data" href="{% url 'cprauth:user_logout' %}"> Logout </a></li>
+						{% endif %}
 						</ul>
 					</li>
 				{% else %}

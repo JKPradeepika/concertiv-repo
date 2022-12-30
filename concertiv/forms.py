@@ -98,7 +98,7 @@ class ResetPasswordConfirmForm(forms.Form):
         if password != confirm_password:
             raise forms.ValidationError("Password and Confirm Password does not match")
         elif len(password) < 8 or len(password) > 15:
-            raise forms.ValidationError("Password length mush not be less than 8 or greater than 15")
+            raise forms.ValidationError("Password length must not be less than 8 or greater than 15")
         elif not bool(re.search(r'[A-Z]', password)):
             raise forms.ValidationError("Password must have atleast one CAPS letter")
         elif not bool(re.search(r'\d', password)):

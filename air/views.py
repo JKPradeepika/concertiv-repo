@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from django.views.generic import View
+from django.core.exceptions import ValidationError
 
 from .forms import AirRawdataForm
-from .models import Airline, Airport, Alliance
+from .models import Airline, Airport, Alliance, FactTable
 
 from CPR.settings.dev import OSC_CLIENT_ID, OSC_CLIENT_SECRET
 from CPR.settings.base import BASE_DIR
@@ -16,6 +17,10 @@ import jwt
 import csv
 import errno
 import shutil
+from decouple import config
+from sqlalchemy import create_engine
+import psycopg2
+import psycopg2.extras as extras
 
 # Create your views here.
 class BasicView(View):
@@ -240,7 +245,7 @@ class BasicView(View):
         airline_list.append(savings)
         return airline_list, total_non_prism_pre_discount, total_non_prism_actual_spend, total_non_prism_vol, total_non_prism_savings, total_non_prism_net, total_non_prism_final_savings
 
-    
+        
 class RawDataView(BasicView):
     form_class = AirRawdataForm
     template_name = 'air/raw_data.html'
@@ -361,6 +366,7 @@ class ProcessDataView(BasicView):
             country = request.POST.get('country')
             year = request.POST.get('year')
             quarter = request.POST.get('quarter')
+            conn = psycopg2.connect(database=config('DEV_DB_NAME'), user=config('DEV_DB_USER'),password=config('DEV_DB_PASSWORD'), host=config('DB_HOST'),port=config('DB_PORT'))   
             try:
                 if os.path.exists(src_csv_file_path):
                     win_etl_file_path = self.base_path()
@@ -434,8 +440,8 @@ class ProcessDataView(BasicView):
                     df.insert(3, "Client", customer_name, True)
                     df.insert(4, "Agency", travel_agency, True)
                     df.insert(5, "PoS", country, True)
-                    traveler_names = df['Traveler Name'].tolist()
-                    df["Traveler Name"] = [i.replace('/', ', ') for i in traveler_names]
+                    traveller_names = df['Traveller Name'].tolist()
+                    df["Traveller Name"] = [i.replace('/', ', ') for i in traveller_names]
                     df["Carrier Name"] = [i["carrier_name"] for cc in carrier_code for i in airline_data for k, v in i.items() if cc == v]
                     df["PNR Locator"] = df["PNR"]
                     df["Miles / Mileage"] = df["Segment Miles"]
@@ -525,6 +531,10 @@ class ProcessDataView(BasicView):
                     [discount_if_applied.append("Y") if ctc == "Available, Matched" or ctd == "Available, Matched" else discount_if_applied.append("N") for ctc, ctd in zip(classifier_tour_code, classifier_ticket_designator)]
                     df["If Discount Applied"] = [da for da in discount_if_applied]
                     df["Discount"] = [d for d in discount]
+                    currency = list()
+                    for i in range(len(savings_tour_code)):
+                        currency.append("USD")
+                    df["Currency Code"] = [c for c in currency]
                     pre_dis, pre, sav = [], [], []
                     fare = df["Fare"].tolist()
                     discount = df["Discount"].tolist()
@@ -546,14 +556,16 @@ class ProcessDataView(BasicView):
                             non_prism[ali] = "N"
                     df["Non-Prism Preferred"] = [np for np in non_prism]
                     
+                    
+                    
                     # Prism flights data still pending....
                     
                     # Rearranging the columns
                     headers = ["Travel Date Quarter", "Travel Date Half Year", "Travel Date Year", 
-                            "Client", "Agency", "PoS", "Traveler Name", 
+                            "Client", "Agency", "PoS", "Traveller Name", 
                             "Departure Date", "Booked Date / Invoice Date","Carrier Code", "Carrier Name", 
                             "Class of Service Code", "Origin Airport Code", "Destination Airport Code", 
-                            "Tour Code", "Ticket Designator", "Fare", "Tax", "Miles / Mileage", "Invoice Number",
+                            "Tour Code", "Ticket Designator", "Fare", "Currency Code", "Tax", "Miles / Mileage", "Invoice Number",
                             "PNR Locator", "CTV_Booking Class Code", "CTV_Origin_Airport_Id", 
                             "CTV_Destination_Airport_Id", "CTV_Fare", "CTV_Reference", "CTV_Carrier_Id", "CTV_Alliance_ID", 
                             "Savings Alliance Classification", "Savings Contract Classifier", "Discount", "Pre-Discount Cost", 
@@ -567,10 +579,67 @@ class ProcessDataView(BasicView):
                     new_file_name = "{}_{}_{}{}_{}_FinalData.xlsx".format(customer_name, travel_type, quarter, year, country)
                     file_name = Path(os.path.join(final_dropbox_path, new_file_name))
                     df.to_excel(file_name, index=False)
+                    
+                    
+                    # Saving data from .xlsx file to DB
+                    db_df = pd.read_excel(file_name)
+                    db_df = df[["Travel Date Quarter", "Client", "Traveller Name", "Booked Date / Invoice Date",
+                           "Departure Date", "Carrier Code", "Class of Service Code", "Origin Airport Code",
+                           "Destination Airport Code", "Tour Code", "Ticket Designator", "PoS", "Fare",
+                           "Tax", "Miles / Mileage", "PNR Locator", "Discount", "Invoice Number", "Currency Code"]].copy()
+                    db_df.rename(columns={"Travel Date Quarter": "data_receive_quarter", "Client": "client_name", "Traveller Name": "traveller_name",
+                                          "Booked Date / Invoice Date": "booked_date_or_invoice_date", "Departure Date": "departure_date", "Carrier Code": "carrier_code_id", 
+                                          "Class of Service Code": "class_of_service_code", "Origin Airport Code": "origin_airport_code_id", 
+                                          "Destination Airport Code": "destination_airport_code_id", "Tour Code": "tour_code", "Ticket Designator": "ticket_designator", 
+                                          "PoS": "point_of_sale", "Fare": "fare", "Tax": "tax", "Miles / Mileage": "miles_or_mileage", "PNR Locator": "pnr_locator", 
+                                          "Discount": "discount", "Invoice Number": "invoice_number", "Currency Code": "currency_code"}, inplace=True)
+                    db_excel_file_name = "{}_{}_{}{}_{}_DBFinalData.xlsx".format(customer_name, travel_type, quarter, year, country)
+                    db_excel_file_path = Path(os.path.join(final_dropbox_path, db_excel_file_name))
+                    db_df.to_excel(db_excel_file_path, index=False)
+                    
+                    # Saving final data into database
+                    # table = "air_facttable"
+                    # cols = ','.join(list(db_df.columns))
+                    # for x in db_df.to_numpy(): 
+                    #     query = "INSERT INTO {0} ({1}) VALUES {2}".format(table, cols, tuple(x)) 
+                    #     cursor.execute(query)
+                    #     validate_discount = "SELECT exists (SELECT 1 FROM air_facttable WHERE discount = 99999.9)"
+                    #     cursor.execute(validate_discount)
+                        
+                    #     if validate_discount:
+                    #         raise ValidationError("Reference code is available but Discount is not applied. Please check")
+                    # conn.commit()
+                    # conn.close()
+                    
+                    # Saving final data into database
+                    # conn = psycopg2.connect(host="localhost", port=5432, user=str(config('DEV_DB_USER')), password=str(config('DEV_DB_PASSWORD')), database=str(config('DEV_DB_NAME')))
+                    table = "air_facttable"
+                    cols = ','.join(list(db_df.columns))                    
+                    for x in db_df.to_numpy():
+                        if x[16] == 99999.9:
+                             raise ValidationError("Reference code is available but Discount is not applied. Please check")
+                        else:
+                            query = "INSERT INTO {0} ({1}) VALUES {2}".format(table, cols, tuple(x)) 
+                            cursor = conn.cursor()
+                            cursor.execute(query)
+                            cursor.close()
+                    conn.commit()
+                    conn.close()
+                    
                     context = {'username': username, 'customer_name': customer_name, 'quarter': quarter, 'year': year, 'country': country, 'final_sheet': file_name}
                     return render(request, self.template_name, context=context)
-            except FileNotFoundError:
-                message = ("Unable to find CSV file in specified directory: %s" % src_csv_file_path)
+            except ValidationError as v:
+                print(v.message)
+                conn.rollback()
+                context = {'message': v.message}
+                return render(request, self.error_url, context)
+            except psycopg2.DatabaseError as error:
+                print("Error: %s" % error)
+                conn.rollback()
+                context = {'message': error}
+                return render(request, self.error_url, context)
+            except FileNotFoundError as error:
+                message = ("Unable to find CSV file in specified directory: %s" % src_csv_file_path, error)
                 context = {'message': message}
                 return render(request, self.error_url, context)
             finally:

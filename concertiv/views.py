@@ -286,7 +286,14 @@ class UsersLoginView(AdminLoginView):
                 return render(request, self.error_url, context={'message': message})
         return render(request, self.template_name, context={'form': form})
     
+class UsersLogoutView(AdminLogoutView):
+    template_name = "users/user_logout.html"
     
+    def post(self, request, *args, **kwargs):
+        logout(request)
+        request.session.clear_expired()
+        return render(request, self.template_name) 
+     
 class ResetPasswordView(View):
     form_class = ResetPasswordForm
     template_name = "users/password_reset.html"
