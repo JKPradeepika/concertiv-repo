@@ -281,7 +281,7 @@ class RawDataView(BasicView):
                     data = {
                         'iss': OSC_CLIENT_ID,
                         'exp': datetime.datetime.now() + datetime.timedelta(minutes=15),
-                        'username': username,
+                        'user_id': username,
                         'customer_name': customer_name, 
                         'quarter': quarter, 
                         'year': year,
@@ -532,8 +532,9 @@ class ProcessDataView(BasicView):
                     df["If Discount Applied"] = [da for da in discount_if_applied]
                     df["Discount"] = [d for d in discount]
                     currency = list()
-                    for i in range(len(savings_tour_code)):
-                        currency.append("USD")
+                    if 'Currency Code' not in df.columns:
+                        for i in range(len(savings_tour_code)):
+                            currency.append("USD")
                     df["Currency Code"] = [c for c in currency]
                     pre_dis, pre, sav = [], [], []
                     fare = df["Fare"].tolist()
@@ -598,23 +599,8 @@ class ProcessDataView(BasicView):
                     db_df.to_excel(db_excel_file_path, index=False)
                     
                     # Saving final data into database
-                    # table = "air_facttable"
-                    # cols = ','.join(list(db_df.columns))
-                    # for x in db_df.to_numpy(): 
-                    #     query = "INSERT INTO {0} ({1}) VALUES {2}".format(table, cols, tuple(x)) 
-                    #     cursor.execute(query)
-                    #     validate_discount = "SELECT exists (SELECT 1 FROM air_facttable WHERE discount = 99999.9)"
-                    #     cursor.execute(validate_discount)
-                        
-                    #     if validate_discount:
-                    #         raise ValidationError("Reference code is available but Discount is not applied. Please check")
-                    # conn.commit()
-                    # conn.close()
-                    
-                    # Saving final data into database
-                    # conn = psycopg2.connect(host="localhost", port=5432, user=str(config('DEV_DB_USER')), password=str(config('DEV_DB_PASSWORD')), database=str(config('DEV_DB_NAME')))
                     table = "air_facttable"
-                    cols = ','.join(list(db_df.columns))                    
+                    cols = ','.join((db_df.columns).to_list())                   
                     for x in db_df.to_numpy():
                         if x[16] == 99999.9:
                              raise ValidationError("Reference code is available but Discount is not applied. Please check")

@@ -23,15 +23,11 @@
 			<ul class="navbar-nav ml-auto" style="float:right">
 				{% if user.is_authenticated %}
 					<li class="nav-item dropdown active">
-						<a class="nav-link  dropdown-toggle data" href="#" data-toggle="dropdown"> Hi, {{ username }}</a>
+						<a class="nav-link  dropdown-toggle data" href="#" data-toggle="dropdown"> <i class="bi bi-person-fill-check icon-size"></i>&nbsp;Hi, {{ user.username }}</a>
 						<ul class="dropdown-menu dropdown-menu-right">
 						<li><a class="dropdown-item data" href="{% url 'cprauth:profile' %}"> Profile </a></li>
 						{% if user.is_superuser %}
-						<li><a class="dropdown-item dropdown-toggle data" href="#"> Operations </a>
-							<ul class="submenu submenu-left dropdown-menu">
-								<li><a class="dropdown-item data" href="{% url 'cprauth:all_users' %}">CPR Users</a></li>
-							</ul>
-						</li>
+						<li><a class="dropdown-item data" href="{% url 'cprauth:all_users' %}">CPR Users</a></li>
 						{% endif %}
 						{% if user.is_superuser %}
 						<li><a class="dropdown-item data" href="{% url 'cprauth:logout' %}"> Logout </a></li>
@@ -41,7 +37,7 @@
 						</ul>
 					</li>
 				{% else %}
-					<li class="nav-item active"><a class="nav-link data" href="{% url 'cprauth:login' %}"> Sign In </a></li>
+					<li class="nav-item active"><a class="nav-link data" href="{% url 'cprauth:login' %}"><i class="bi bi-person-fill-dash icon-size"></i>&nbsp;Sign In </a></li>
 				{% endif %}
 			</ul>
 		</div>
