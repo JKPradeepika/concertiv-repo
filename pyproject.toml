@@ -1,0 +1,12 @@
+[tool.black]
+line-length = 120
+extend-exclude = "migrations"
+
+[tool.coverage.run]
+omit = ["conftest.py", "manage.py", "noxfile.py", "komodo_backend/asgi.py", "komodo_backend/wsgi.py", "*/fixtures/*", "*/migrations/*", "*/test_utils/*", "*/tests/*", "*/heroku_data_migration.py", "*/data_migration.py"]
+
+[tool.django-stubs]
+django_settings_module = "komodo_backend.settings"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "komodo_backend.settings"

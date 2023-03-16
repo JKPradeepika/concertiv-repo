@@ -1,0 +1,119 @@
+[
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 1,
+      "name": "pdf",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 2,
+      "name": "png",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 3,
+      "name": "jpg",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 4,
+      "name": "jpeg",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 5,
+      "name": "svg",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 6,
+      "name": "heic",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 7,
+      "name": "gif",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 8,
+      "name": "xls",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 9,
+      "name": "xlsx",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 10,
+      "name": "doc",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 11,
+      "name": "docx",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 12,
+      "name": "ppt",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.alloweddocumentfileextension",
+    "fields": {
+      "id": 13,
+      "name": "pptx",
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  }
+]

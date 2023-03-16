@@ -1,0 +1,14 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /var/lib/django/komodo-backend
+hooks:
+  BeforeInstall:
+    - location: zcicd_scripts/before_install.sh
+      timeout: 6000
+      runas: ubuntu
+  AfterInstall:
+    - location: zcicd_scripts/after_install.sh
+      timeout: 6000
+      runas: ubuntu

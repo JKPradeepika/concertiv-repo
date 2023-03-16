@@ -1,0 +1,432 @@
+[
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 1,
+      "name": "Default",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 2,
+      "name": "Software",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 3,
+      "name": "Raw Data",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 4,
+      "name": "Application",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 5,
+      "name": "Research",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 6,
+      "name": "CRM",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 7,
+      "name": "Services",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 8,
+      "name": "Data Feed",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 9,
+      "name": "Data Room",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 10,
+      "name": "Database",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 11,
+      "name": "Exchange Feed",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 12,
+      "name": "Expert Network",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 13,
+      "name": "Document Management",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 14,
+      "name": "Core Desktop",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 15,
+      "name": "Industry Reports",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 16,
+      "name": "News",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 17,
+      "name": "Productivity Tool",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 18,
+      "name": "Office Add-In",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 19,
+      "name": "Other",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 20,
+      "name": "Presentation Tool",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 21,
+      "name": "Pricing Tool",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 22,
+      "name": "Monitoring Tool",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 23,
+      "name": "Charting",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 24,
+      "name": "Mapping",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 25,
+      "name": "Survey Tool",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 26,
+      "name": "Trade Execution",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 27,
+      "name": "Valuation",
+      "domain": 1,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 28,
+      "name": "Database",
+      "domain": 2,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 29,
+      "name": "Application",
+      "domain": 2,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 30,
+      "name": "Monitoring Tool",
+      "domain": 2,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 31,
+      "name": "CRM",
+      "domain": 2,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 32,
+      "name": "Productivity Tool",
+      "domain": 2,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 33,
+      "name": "Cybersecurity",
+      "domain": 2,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 34,
+      "name": "Infrastructure",
+      "domain": 2,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 35,
+      "name": "Data Management",
+      "domain": 2,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 36,
+      "name": "Revenue Operations",
+      "domain": 2,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 37,
+      "name": "Marketing Tool",
+      "domain": 2,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 38,
+      "name": "Events",
+      "domain": 2,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 39,
+      "name": "Air",
+      "domain": 3,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 40,
+      "name": "TMC",
+      "domain": 3,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 41,
+      "name": "Rail",
+      "domain": 3,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 42,
+      "name": "Car",
+      "domain": 3,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  },
+  {
+    "model": "api.producttype",
+    "fields": {
+      "id": 43,
+      "name": "Hotel",
+      "domain": 3,
+      "created_at": "2023-01-01 17:00:00.462051-04",
+      "updated_at": "2023-01-01 17:00:00.462051-04"
+    }
+  }
+]
